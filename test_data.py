@@ -4,13 +4,13 @@ temp = [304, 123, 338, 687, 404, 803, 309, 77, 598, 2, 307, 511, 21, 227, 332, 1
 
 test_names = ['Jake', 'Richard', 'Karen', 'Pamela', 'Edwin', 'Antonia', 'Rick', 'Candace', 'Rosa', 'Elizabeth', 'Nicole', 'Reginald', 'Bonnie', 'Thomas', 'Charles', 'Tania', 'Martha', 'Nicolas', 'Steven', 'William', 'Gerald', 'Catherine', 'Grace', 'Antonia', 'John', 'Raquel', 'Ed', 'William', 'Garrett', 'Matthew', 'Fernando', 'Lisa', 'Rosa', 'Harold', 'Kenneth', 'David', 'Lynn', 'Avery', 'Elia', 'Gloria', 'Gwendolyn', 'Betty', 'Helen', 'Martin', 'Willie', 'Vicki', 'Robert', 'Johnny', 'John', 'Justin']
 
-test_not_name = ['Lois', 'Jannie', 'Shawn', 'Jan', 'Saul', 'Cristy', 'Thelma', 'Melba', 'Darrell', 'Cristina', 'Merle', 'Joni', 'Wm', 'Wallace', 'Emilia', 'Tricia', 'Michelle', 'Erik', 'Marshall', 'Gail', 'Erik', 'Aaron', 'Kathleen', 'Emma', 'Phillip', 'Phillip', 'Alfonso', 'Jonna', 'Thelma', 'Lenore', 'Deanne', 'Milton', 'Eric', 'Raymon', 'Lisha', 'Julia', 'Glen', 'Whitney', 'Bernice', 'Marlene', 'Deena', 'Emma', 'Mildred', 'Kellye', 'Mardell', 'Monte', 'Lorraine', 'Taryn', 'Freddie', 'Shandra'] #list of names not in dataset 
+test_not_name = ['Jamal', 'Alton', 'Aura', 'Delia', 'Shandi', 'Ron', 'Effie', 'Homer', 'Thelma', 'Bradford', 'Maribel', 'Lacey', 'Mariano', 'Nona', 'Emma', 'Jorge', 'Jay', 'Emily', 'Leonard', 'Sheryl', 'Manuela', 'Benton', 'Eleanore', 'Kellie', 'Merle', 'Mechelle', 'Eileen', 'Nora', 'Gerardo', 'Julia', 'Candyce', 'Ronda', 'Wesley', 'Christina', 'Garry', 'Blair', 'Frederick', 'Tyron', 'Sheilah', 'Michelle', 'Howard', 'Tanya', 'Bernard', 'Clarice', 'Bertha', 'Helga', 'Francisca', 'Bridget', 'Russell', 'Dewayne'] #list of names not in dataset 
 
 # import names
 # no_name = [] 
 # for i in range(50):
 #     temp_name = names.get_first_name()
-#     while temp_name in mock_data: 
+#     while temp_name in mock_data or temp_name in no_name: 
 #         temp_name = names.get_first_name()
 #     no_name.append(temp_name)
 
