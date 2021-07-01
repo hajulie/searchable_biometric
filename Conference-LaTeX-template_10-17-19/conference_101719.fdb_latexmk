@@ -1,7 +1,7 @@
 # Fdb version 3
-["pdflatex"] 1625019704 "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.tex" "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.pdf" "conference_101719" 1625019705
-  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.aux" 1625019705 2344 f7a8d11b01c632f1926b444b64d8fbb6 ""
-  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.tex" 1625019703 15330 0335da256d52a0a4bb50c9b3715622c6 ""
+["pdflatex"] 1625097725 "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.tex" "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.pdf" "conference_101719" 1625097725
+  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.aux" 1625097725 8 a94a2480d3289e625eea47cd1b285758 ""
+  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.tex" 1625097724 14824 0e8aae11b1a59ce9c312a874ded01052 ""
   "/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2021/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2021/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -82,13 +82,13 @@
   "/usr/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1616695603 5169178 a2ce6e2d73f603b690db6777d06dbccb ""
   "/usr/local/texlive/2021/texmf-var/web2c/pdftex/pdflatex.fmt" 1622735614 2724733 4f9b8712a82e42e4b72c3513e9cd93f3 ""
   "/usr/local/texlive/2021/texmf.cnf" 1616695596 577 4c1911a7228e554c6032256d3cf5567d ""
-  "IEEEtran.cls" 1440654524 288304 b67b6fc6c2abb39f9b461923f5199343 ""
-  "conference_101719.aux" 1625019705 2344 f7a8d11b01c632f1926b444b64d8fbb6 "pdflatex"
-  "conference_101719.tex" 1625019703 15330 0335da256d52a0a4bb50c9b3715622c6 ""
-  "fig1.png" 1625019500 4535 3b4c70b1b9361fad686e8d234c8fe506 ""
+  "IEEEtran.cls" 1625096214 288304 b67b6fc6c2abb39f9b461923f5199343 ""
+  "conference_101719.aux" 0 -1 0 "pdflatex"
+  "conference_101719.tex" 1625097724 14824 0e8aae11b1a59ce9c312a874ded01052 ""
+  "fig1.png" 1625096214 4535 3b4c70b1b9361fad686e8d234c8fe506 ""
   (generated)
   "conference_101719.log"
   "conference_101719.pdf"
-  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.log"
   "conference_101719.aux"
   "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.pdf"
+  "/Users/julieha/Documents/uconn research/uconn_reu/Conference-LaTeX-template_10-17-19/conference_101719.log"
