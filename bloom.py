@@ -31,6 +31,7 @@ class bftree(object):
         #rest of tree
         level = 0 #levels increase going down 
         tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
+        # print("tree depth", tree_depth)
         current_node = self.root
         parent_node = self.root-1 #-1 is just for it to work overall
         while level != tree_depth: 
@@ -44,36 +45,39 @@ class bftree(object):
                 elements_in_filter = elements[(n*items_in_filter):(n*items_in_filter)+items_in_filter]
 
                 if elements_in_filter == []:
-                    self.tree.create_node(str(current_node)+str(elements_in_filter), current_node, data=None, parent=parent_node)
+                    self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
                 else: 
                     bf = self.new_filter(items_in_filter, elements_in_filter)
-                    self.tree.create_node(str(current_node) + str(elements_in_filter), current_node, data=bf, parent=parent_node)
+                    self.tree.create_node(str(current_node), current_node, data=bf, parent=parent_node)
+
         return self.tree
 
-    #search for item 
     def search(self, item):
-        nodes_visited = [] 
-        root_bf = self.tree[self.root].data
         depth = self.tree.depth()
+        stack = [] 
+        nodes_visited = [] 
+        leaf_nodes = [] 
+        access_depth = [[] for i in range(depth+1)] #nodes accessed per depth s
+        root_bf = self.tree[self.root].data
 
+        access_depth[0].append(self.root)
         if item in root_bf: 
-            current_level = 0 
-            parent = self.root 
-            new_parent = self.root
-            nodes_visited.append(parent)
-            while current_level != depth: 
-                current_level += 1
-                children = self.tree.children(parent)
-                for i in children: 
-                    current_node = i.identifier
-                    if self.tree[current_node].data != None and item in self.tree[current_node].data: 
-                        nodes_visited.append(current_node)
-                        new_parent = current_node
-                    
-                parent = new_parent
-        else: 
-            return nodes_visited
-        return nodes_visited
+            stack.append(self.root)
+
+            while stack != []: 
+                current_node = stack.pop()
+                nodes_visited.append(current_node)
+                children = self.tree.children(current_node) 
+                if children != []: 
+                    for c in children: 
+                        child = c.identifier
+                        child_depth = self.tree.depth(child)
+                        access_depth[child_depth].append(child)
+                        if self.tree[child].data != None and item in self.tree[child].data: 
+                            stack.append(child)
+                else: 
+                    leaf_nodes.append(current_node)
+        return nodes_visited, leaf_nodes, access_depth
                     
 
 def find_size(bftree): 
@@ -96,7 +100,10 @@ def find_size(bftree):
 # t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe'])
 # t.tree.show()
 # r = t.tree.get_node(4)
-# print("CHILDRE", t.tree.children(4))
+# print(r)
+# r = t.tree.depth(2)
+# print(type(r))
+# print("CHILDRE", t.tree.children(15))
 # print(t.search('Abe'))
 # print(sys.getsizeof(t.tree))
 # print(find_size(t))
@@ -104,3 +111,9 @@ def find_size(bftree):
 # from test_data import mock_data
 # t = bftree(5, 0.01, 1000)
 # t.build_index(mock_data)
+
+# t = bftree(2, 0.01, 8)
+# t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe', 'John', 'John'])
+# t.tree.show()
+# s = t.search('John')
+# print(s)

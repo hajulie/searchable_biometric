@@ -8,16 +8,19 @@ search_in_data = test_data.test_names
 search_not_data = test_data.test_not_name
 
 
-with open('tests.csv', mode='w') as csv_file, open('traverse.csv', mode='w') as trav_file: 
+with open('tests2.csv', mode='w') as csv_file, open('traverse2.csv', mode='w') as trav_file, open('neg_trav2.csv', mode='w') as not_file: 
     #{'branching_factor', 'false_positive_rate', 'max_elements', 'total storage', 'time'}
     field_names = ['branching_factor', 'false_positive_rate', 'max_elements', 'total storage', 'time']
     initial_test = csv.DictWriter(csv_file, fieldnames=field_names)
     initial_test.writeheader()
 
     #{'branching_factor', 'false_positive_rate', 'max_elements', 'total storage', 'name', 'num_nodes_visited', 'nodes_visited'}
-    traverse_field_names = ['branching_factor', 'false_positive_rate', 'max_elements', 'total storage', 'name', 'num_nodes_visited', 'nodes_visited', 'time']
+    traverse_field_names = ['branching_factor', 'false_positive_rate', 'max_elements', 'total storage', 'name', 'num_nodes_visited', 'nodes_visited', 'time', 'leaf_nodes_reached', 'nodes_per_depth']
     traverse_file = csv.DictWriter(trav_file, fieldnames=traverse_field_names)
     traverse_file.writeheader()
+
+    neg_file = csv.DictWriter(not_file, fieldnames=traverse_field_names)
+    neg_file.writeheader()
 
     for branch in diff_branching: 
         for pos in diff_false_pos: 
@@ -32,14 +35,14 @@ with open('tests.csv', mode='w') as csv_file, open('traverse.csv', mode='w') as 
 
             for p in search_in_data: 
                 start_time = time.time()
-                nodes = t.search(p)
+                nodes_visited, leaf_nodes, access_depth = t.search(p)
                 end_time = time.time()
 
-                traverse_file.writerow({'branching_factor': branch, 'false_positive_rate': pos, 'max_elements': max_elements, 'total storage': size, 'name': p, 'num_nodes_visited': len(nodes), 'nodes_visited': nodes, 'time': end_time-start_time})
+                traverse_file.writerow({'branching_factor': branch, 'false_positive_rate': pos, 'max_elements': max_elements, 'total storage': size, 'name': p, 'num_nodes_visited': len(nodes_visited), 'nodes_visited': nodes_visited, 'time': end_time-start_time, 'leaf_nodes_reached': leaf_nodes, 'nodes_per_depth': access_depth})
 
             for p in search_not_data:
-                nodes = t.search(p)
-                traverse_file.writerow({'branching_factor': branch, 'false_positive_rate': pos, 'max_elements': max_elements, 'total storage': size, 'name': p, 'num_nodes_visited': len(nodes), 'nodes_visited': nodes, 'time': end_time-start_time})
+                nodes_visited, leaf_nodes, access_depth = t.search(p)
+                neg_file.writerow({'branching_factor': branch, 'false_positive_rate': pos, 'max_elements': max_elements, 'total storage': size, 'name': p, 'num_nodes_visited': len(nodes_visited), 'nodes_visited': nodes_visited, 'time': end_time-start_time, 'leaf_nodes_reached': leaf_nodes, 'nodes_per_depth': access_depth})
 
             print("branch {}, fpr {}".format(branch, pos))
 
