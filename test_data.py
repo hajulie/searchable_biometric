@@ -13,12 +13,12 @@ import names, random
 #         temp = names.get_first_name()
 #     mock_data.append(temp)        
 
-# test_names = []
-# for i in range(50): 
-#     temp = random.randint(0, 50)
-#     while mock_data[temp] in test_names:
-#         temp = random.randint(0, 50)
-#     test_names.append(mock_data[temp])
+test_names = []
+for i in range(50): 
+    temp = random.randint(0, 50)
+    while mock_data[temp] in test_names:
+        temp = random.randint(0, 50)
+    test_names.append(mock_data[temp])
 
 # test_not_name = [] 
 # for i in range(50): 

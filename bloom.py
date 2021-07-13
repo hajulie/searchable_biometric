@@ -52,7 +52,7 @@ class bftree(object):
 
         return self.tree
 
-    def search(self, item):
+    def search(self, list_item): #list_item : if any item in the list_item is in bloom filter visit all children. 
         depth = self.tree.depth()
         stack = [] 
         nodes_visited = [] 
@@ -61,22 +61,28 @@ class bftree(object):
         root_bf = self.tree[self.root].data
 
         access_depth[0].append(self.root)
-        if item in root_bf: 
-            stack.append(self.root)
+        for item in list_item: 
+            if item in root_bf: 
+                stack.append(self.root)
+                break
 
-            while stack != []: 
-                current_node = stack.pop()
-                nodes_visited.append(current_node)
-                children = self.tree.children(current_node) 
-                if children != []: 
-                    for c in children: 
-                        child = c.identifier
-                        child_depth = self.tree.depth(child)
-                        access_depth[child_depth].append(child)
-                        if self.tree[child].data != None and item in self.tree[child].data: 
-                            stack.append(child)
-                else: 
-                    leaf_nodes.append(current_node)
+        while stack != []: 
+            print("stack", stack)
+            current_node = stack.pop()
+            nodes_visited.append(current_node)
+            children = self.tree.children(current_node) 
+            if children != []: 
+                for c in children: 
+                    child = c.identifier
+                    child_depth = self.tree.depth(child)
+                    access_depth[child_depth].append(child)
+                    if self.tree[child].data != None and item in self.tree[child].data: 
+                        for item in list_item: 
+                            if item in self.tree[child].data: 
+                                stack.append(child)
+                                break
+            else: 
+                leaf_nodes.append(current_node)
         return nodes_visited, leaf_nodes, access_depth
                     
 
@@ -112,8 +118,7 @@ def find_size(bftree):
 # t = bftree(5, 0.01, 1000)
 # t.build_index(mock_data)
 
-# t = bftree(2, 0.01, 8)
-# t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe', 'John', 'John'])
-# t.tree.show()
-# s = t.search('John')
-# print(s)
+t = bftree(2, 0.01, 8)
+t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe', 'John', 'John'])
+t.tree.show()
+s = t.search(['John'])

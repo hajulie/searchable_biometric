@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import csv, statistics, copy
+import csv, statistics, copy, math
 from test_data import *
 
 colors = ['g', 'b', 'r', 'c']
@@ -299,7 +299,7 @@ def graph_file2(): #make graphs for []2.csv,
     narr_leaf_nodes_reached = []
     narr_nodes_depth = []
     with open('neg_trav2.csv', 'r') as neg: 
-        lines = csv.reader(trav, delimiter=',')
+        lines = csv.reader(neg, delimiter=',')
         next(lines)
 
         for row in lines: 
@@ -314,4 +314,63 @@ def graph_file2(): #make graphs for []2.csv,
             narr_time.append(float(row[7]))
             narr_leaf_nodes_reached.append(row[8])
             narr_nodes_depth.append(row[9])
+
+    max_element = arr_max_elem[0]
+
+    sum_fp_node = [ [0 for i in range(len(diff_branching))] for i in range(len(diff_false_pos))] #avg num of false pos nodes
+    neg_sum_fp_node = [ [0 for i in range(len(diff_branching))] for i in range(len(diff_false_pos))] #avg num of false pos nodes
+
+    for i in range(len(arr_branching_factor)): 
+        current_bf = arr_branching_factor[i]
+        expected_nodes = math.ceil(math.log(max_element, current_bf))+1
+        difference = arr_num_nodes_visited[i] - expected_nodes
+
+        ind_branch = diff_branching.index(current_bf)
+        ind_fpr = diff_false_pos.index(arr_fpr[i]) 
+
+        sum_fp_node[ind_fpr][ind_branch] += difference
+
+    for i in range(len(narr_branching_factor)): 
+        current_bf = narr_branching_factor[i]
+        expected_nodes = 0 
+        difference = narr_num_nodes_visited[i] - expected_nodes
+
+        ind_branch = diff_branching.index(current_bf)
+        ind_fpr = diff_false_pos.index(arr_fpr[i]) 
+
+        neg_sum_fp_node[ind_fpr][ind_branch] += difference
+
+    print(sum_fp_node)
+    print(neg_sum_fp_node)
+
+    labels = [str(b) for b in diff_branching] #string of diff branching 
+    str_fpr = [str(f) for f in diff_false_pos] 
+
+    x = np.arange(len(diff_branching))
+    width = 0.1
+
+    fig, ax = plt.subplots(figsize=(30,6))
+    count = 0 
+    for block in [-5, -3, -1, 1, 3, 5]: 
+        temp = ax.bar(x + block*(width/2), sum_fp_node[count], width, label=str(diff_false_pos[count]))
+        ax.bar_label(temp, padding=3)
+
+        neg_temp = ax.bar(x + block*(width/2), neg_sum_fp_node[count], width, bottom=sum_fp_node[count], label='not')
+        ax.bar_label(neg_temp, padding=3)
+
+        count += 1
+
+    ax.set_ylabel('Total false positives')
+    ax.set_title('Branching factors')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    fig.tight_layout()
+
+    plt.savefig("total false positive nodes")
+
+graph_file2()
+        
+
 
