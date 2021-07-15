@@ -1,3 +1,4 @@
+import pickle
 
 # Extended LSH implementation based on bit sampling LSH for Hamming distance.
 class eLSH:
@@ -33,3 +34,9 @@ class eLSH:
     def getFAR(self):
         return 1 - pow(1 - pow(1 - (self.c * self.r / self.n), self.s), self.l)
 
+    def serialize(self):
+        return pickle.dumps(self)
+
+    @staticmethod
+    def deserialize(pickled_elsh):
+        return pickle.loads(pickled_elsh)
