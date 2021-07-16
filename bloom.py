@@ -1,36 +1,61 @@
 from bloom_filter import BloomFilter
 from treelib import Node, Tree
 import math, os, sys
+import eLSH as extended_lsh
+from LSH import LSH
+import pickle
 
 class bftree(object):
-    def __init__(self, branching_f, error_rate, max_elements):
+    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c=0.5 * 1024/307, s=12, l=1000):
         self.branching_factor = branching_f
         self.error_rate = error_rate
         self.max_elem = max_elements
         self.tree = None
-        self.root = None
+        self.root = branching_f-1
+        self.eLSH = None
+        self.n = n
+        self.r = r
+        self.c = c
+        self.s = s
+        self.l = l 
 
     #creates a new bloom filter with elements from actual_elements
     def new_filter(self, num_expected_elements, actual_elements=None): 
         temp = BloomFilter(max_elements=self.max_elem, error_rate=self.error_rate)
-        if actual_elements != None: 
-            for i in actual_elements:
-                temp.add(i)
         return temp
+
+    def add_with_eLSH(self, filter, eLSH, elements): #add to bloom filter with applying eLSH 
+        for i in elements: #convert i to string first? 
+            # print(i)
+            if type(i) == str: 
+                temp = ''.join(format(ord(k), '08b') for k in i)
+                i = [int(k) for k in temp]
+                i = i + ([0 for i in range(self.n - len(i))]) #padding
+            current_hash = eLSH.hash(i)
+            for j in current_hash: 
+                # print(j)
+                p = pickle.dumps(j)
+                filter.add(p) #might have to convert this to string first 
+
+        return filter        
 
     #build the tree 
     def build_index(self, elements): 
         self.tree = Tree() 
-        self.root = self.branching_factor-1
         num_elements = len(elements)
+        level = 0 #levels increase going down 
 
-        #root of tree
-        bfilter_root = self.new_filter(num_elements, elements)
+        tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
+        self.eLSH = [None for i in range(tree_depth + 1)]
+
+        #elsh object for root 
+        current_elsh = extended_lsh.eLSH(LSH, self.n, self.r, self.c, self.s, num_elements)
+        self.eLSH[level] = current_elsh
+        bfilter_root = self.new_filter(num_elements)
+        self.add_with_eLSH(bfilter_root, current_elsh, elements)
         self.tree.create_node("root", self.root, data=bfilter_root)
 
-        #rest of tree
-        level = 0 #levels increase going down 
-        tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
+        
         # print("tree depth", tree_depth)
         current_node = self.root
         parent_node = self.root-1 #-1 is just for it to work overall
@@ -38,6 +63,8 @@ class bftree(object):
             level += 1
             nodes_in_level = self.branching_factor**level
             items_in_filter = self.branching_factor**(tree_depth-level)
+            current_elsh = extended_lsh.eLSH(LSH, self.n, self.r, self.c, self.s, nodes_in_level)
+            self.eLSH[level] = current_elsh
             for n in range(nodes_in_level): 
                 current_node += 1
                 if current_node % self.branching_factor == 0: 
@@ -47,7 +74,8 @@ class bftree(object):
                 if elements_in_filter == []:
                     self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
                 else: 
-                    bf = self.new_filter(items_in_filter, elements_in_filter)
+                    bf = self.new_filter(items_in_filter)
+                    self.add_with_eLSH(bf, current_elsh, elements_in_filter)
                     self.tree.create_node(str(current_node), current_node, data=bf, parent=parent_node)
 
         return self.tree
@@ -60,14 +88,29 @@ class bftree(object):
         access_depth = [[] for i in range(depth+1)] #nodes accessed per depth s
         root_bf = self.tree[self.root].data
 
+        for i in range(len(list_item)):
+            thing = list_item[i]
+            if type(thing) == str: 
+                temp = ''.join(format(ord(k), '08b') for k in thing)
+                thing = [int(k) for k in temp]
+                thing = thing + ([0 for i in range(self.n - len(list_item))]) #padding
+                list_item[i] = thing
+            
+
         access_depth[0].append(self.root)
+        current_elsh = self.eLSH[0]
         for item in list_item: 
-            if item in root_bf: 
-                stack.append(self.root)
-                break
+            # print(item)
+            current_hash = current_elsh.hash(item)
+            # print(current_hash)
+            for j in current_hash:
+                p = pickle.dumps(j)
+                if p in root_bf: 
+                    stack.append(self.root)
+                    break
 
         while stack != []: 
-            print("stack", stack)
+            # print("stack", stack)
             current_node = stack.pop()
             nodes_visited.append(current_node)
             children = self.tree.children(current_node) 
@@ -75,12 +118,16 @@ class bftree(object):
                 for c in children: 
                     child = c.identifier
                     child_depth = self.tree.depth(child)
+                    current_elsh = self.eLSH[child_depth]
                     access_depth[child_depth].append(child)
-                    if self.tree[child].data != None and item in self.tree[child].data: 
-                        for item in list_item: 
-                            if item in self.tree[child].data: 
-                                stack.append(child)
-                                break
+                    if self.tree[child].data != None: 
+                        for i in list_item:
+                            current_hash = current_elsh.hash(i)
+                            for j in current_hash:
+                                p = pickle.dumps(j)
+                                if p in self.tree[child].data: 
+                                    stack.append(child)
+                                    break
             else: 
                 leaf_nodes.append(current_node)
         return nodes_visited, leaf_nodes, access_depth
@@ -118,7 +165,11 @@ def find_size(bftree):
 # t = bftree(5, 0.01, 1000)
 # t.build_index(mock_data)
 
+from other import try_data
+
 t = bftree(2, 0.01, 8)
-t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe', 'John', 'John'])
+t.build_index(try_data)
 t.tree.show()
-s = t.search(['John'])
+attempt = try_data[4]
+s = t.search([attempt])
+print(s)
