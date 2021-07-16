@@ -80,7 +80,7 @@ class bftree(object):
 
         return self.tree
 
-    def search(self, list_item): #list_item : if any item in the list_item is in bloom filter visit all children. 
+    def search(self, list_item): #list_item : if any item in the list_item is in bloom filter visit all children \\ kinda funky, but list_item must be list 
         depth = self.tree.depth()
         stack = [] 
         nodes_visited = [] 
@@ -167,10 +167,14 @@ def find_size(bftree):
 
 #small test 
 from other import try_data
+import random
 
 t = bftree(2, 0.01, 8)
 t.build_index(try_data)
 t.tree.show()
-attempt = try_data[4]
+attempt = try_data[0]
+for i in range(100): 
+    index = random.randrange(0,1024) 
+    attempt[index] = ~attempt[index]
 s = t.search([attempt])
 print(s)

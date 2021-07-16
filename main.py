@@ -59,7 +59,7 @@ def test_elsh(n, r, c, s, l):
     hx = elsh.hash(x)
     hy = elsh.hash(y)
     hz = elsh.hash(z)
-    print(hx)
+    # print(hx)
     # print(hy)
     # print(hz)
 
