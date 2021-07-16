@@ -1,6 +1,29 @@
+import secrets
 from LSH import LSH
 from eLSH import eLSH
-from math import isclose
+
+
+def sample_rand_vector(n):
+    vector = [0] * n
+    for i in range(n):
+        vector[i] = secrets.choice([0, 1])
+    return vector
+
+
+def add_errors(vector, nb_errors):
+    # check number of errors is not greater than vector size
+    assert (nb_errors <= len(vector))
+
+    modified_vector = [0] * len(vector)
+    # copy vector in modified_vector
+    for i in range(len(vector)):
+        modified_vector[i] = vector[i]
+
+    # randomly flip nb_errors bits
+    for j in range(nb_errors):
+        i = secrets.choice(range(len(vector)))
+        modified_vector[i] = 1 - vector[i]
+    return modified_vector
 
 
 def compareELSH(s, hx, hy):
@@ -15,6 +38,7 @@ def compareELSH(s, hx, hy):
         if matches == s:
             return True, i
     return False, -1
+
 
 def test_lsh(n, r, c):
     print('LSH test ...')
@@ -34,42 +58,48 @@ def test_lsh(n, r, c):
     print("p1 = " + str(lsh_245.getTAR()))
     print("p2 = " + str(lsh_245.getFAR()))
 
+    # test LSH serialization
+    pickled_lsh = LSH.deserialize(lsh_245.serialize())
+    assert (pickled_lsh.hash(x) == (245, 1))
+
     print('SUCCESS')
+
 
 def test_elsh(n, r, c, s, l):
     print('eLSH test ...')
 
-    x = [0] * n
-    x[245] = 1
-    x[721] = 1
-
-    y = [0] * n
-    y[245] = 1
-    y[721] = 1
-    y[1000] = 1
-
-    z = [1] * n
+    x = sample_rand_vector(n)
+    x_50 = add_errors(x, 50)
+    x_307 = add_errors(x, 307)
+    x_600 = add_errors(x, 600)
 
     elsh = eLSH(LSH, n, r, c, s, l)
     hx = elsh.hash(x)
-    hy = elsh.hash(y)
-    hz = elsh.hash(z)
-    print(hx)
-    # print(hy)
-    # print(hz)
+    hx_50 = elsh.hash(x_50)
+    hx_307 = elsh.hash(x_307)
+    hx_600 = elsh.hash(x_600)
 
-    # compare elsh for x and y (should "match" ...)
+    # compare elsh for 50 errors (should "match" ...)
     match = False
-    (match, i) = compareELSH(s, hx, hy)
-    assert(match)
-    assert(hx[i] == hy[i])
+    (match, i) = compareELSH(s, hx, hx_50)
+    assert (match)
+    assert (hx[i] == hx_50[i])
 
-    # compare elsh for x and z (should not "match" ...)
-    (match, i) = compareELSH(s, hx, hz)
-    assert(not match)
+    # compare elsh for 307 errors (should "match" ...)
+    (match, i) = compareELSH(s, hx, hx_307)
+    assert (match)
+
+    # compare elsh for 600 errors (should not "match" most of the time...)
+    (match, i) = compareELSH(s, hx, hx_600)
+    assert (not match)
 
     print("p1' = " + str(elsh.getTAR()))
     print("p2' = " + str(elsh.getFAR()))
+
+    # test eLSH serialization
+    pickled_elsh = eLSH.deserialize(elsh.serialize())
+    h1 = pickled_elsh.hash(x)
+    assert (h1 == hx)
 
     print('SUCCESS')
 
