@@ -1,6 +1,5 @@
 from LSH import LSH
 from eLSH import eLSH
-from math import isclose
 
 
 def compareELSH(s, hx, hy):
@@ -15,6 +14,7 @@ def compareELSH(s, hx, hy):
         if matches == s:
             return True, i
     return False, -1
+
 
 def test_lsh(n, r, c):
     print('LSH test ...')
@@ -34,7 +34,12 @@ def test_lsh(n, r, c):
     print("p1 = " + str(lsh_245.getTAR()))
     print("p2 = " + str(lsh_245.getFAR()))
 
+    # test LSH serialization
+    pickled_lsh = LSH.deserialize(lsh_245.serialize())
+    assert (pickled_lsh.hash(x) == (245, 1))
+
     print('SUCCESS')
+
 
 def test_elsh(n, r, c, s, l):
     print('eLSH test ...')
@@ -70,6 +75,11 @@ def test_elsh(n, r, c, s, l):
 
     print("p1' = " + str(elsh.getTAR()))
     print("p2' = " + str(elsh.getFAR()))
+
+    # test eLSH serialization
+    pickled_elsh = eLSH.deserialize(elsh.serialize())
+    h1 = pickled_elsh.hash(x)
+    assert (h1 == hx)
 
     print('SUCCESS')
 
