@@ -165,6 +165,7 @@ def find_size(bftree):
 # t = bftree(5, 0.01, 1000)
 # t.build_index(mock_data)
 
+#small test 
 from other import try_data
 
 t = bftree(2, 0.01, 8)
