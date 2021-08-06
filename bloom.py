@@ -5,17 +5,27 @@ import eLSH as extended_lsh
 from LSH import LSH
 import pickle
 
+import pyoram
+from pyoram.util.misc import MemorySize
+from pyoram.oblivious_storage.tree.path_oram import PathORAM
+
+from six.moves import xrange
+
+storage_name = "oram.bin"
+
+
 class bftree(object):
-    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c=0, s=12, l=1000):
+    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c= 0.5 * (1024/307), s=12, l=1000):
         self.branching_factor = branching_f
         self.error_rate = error_rate
         self.max_elem = max_elements
         self.tree = None
         self.root = branching_f-1
+        self.depth = None
         self.eLSH = None
         self.n = n
         self.r = r
-        self.c = 0.5 * n/r
+        self.c = c
         self.s = s
         self.l = l 
 
@@ -25,17 +35,13 @@ class bftree(object):
         return temp
 
     def add_with_eLSH(self, filter, elsh, elements): #add to bloom filter with applying eLSH 
-        for i in elements: #convert i to string first? 
-            # print(i)
-            # if type(i) == str: 
-            #     temp = ''.join(format(ord(k), '08b') for k in i)
-            #     i = [int(k) for k in temp]
-            #     i = i + ([0 for i in range(self.n - len(i))]) #padding
+        for i in elements:
             current_hash = elsh.hash(i)
+            count_hash = 0 
             for j in current_hash: 
-                # p = pickle.dumps(j)
+                count_hash += 1
                 p = str(j)
-                filter.add(p) #might have to convert this to string first 
+                filter.add(p) 
 
         return filter        
 
@@ -46,6 +52,7 @@ class bftree(object):
         level = 0 #levels increase going down 
 
         tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
+        self.depth = tree_depth
         self.eLSH = [None for i in range(tree_depth + 1)]
 
         #elsh object for root 
@@ -55,7 +62,6 @@ class bftree(object):
         f = self.add_with_eLSH(bfilter_root, current_elsh, elements)
         self.tree.create_node("root", self.root, data=f)
         
-        # print("tree depth", tree_depth)
         current_node = self.root
         parent_node = self.root-1 #-1 is just for it to work overall
         while level != tree_depth: 
@@ -79,7 +85,31 @@ class bftree(object):
 
         return self.tree
 
-    def search(self, item): #list_item : if any item in the list_item is in bloom filter visit all children \\ kinda funky, but list_item must be list 
+    def tree_to_arr(self): 
+        arr_nodes = self.tree.all_nodes()
+        return arr_nodes
+
+    def oram(self): #UNFINISHED AND DOES NOT WORK 
+        if os.path.exists(storage_name): 
+            os.remove(storage_name)
+        
+        arr_nodes = self.tree_to_arr()
+        for i in range(len(arr_nodes)): 
+            arr_nodes[i] = bytearray(pickle.dumps(arr_nodes[i]))
+        print(arr_nodes)
+
+        f = PathORAM.setup(storage_name, block_size=3*16, block_count=self.max_elem, storage_type='file')
+        f.close()
+        
+        with PathORAM(storage_name, f.stash, f.position_map, key=f.key, storage_type='file') as f: 
+            orig = f.read_blocks(list(xrange(self.max_elem)))
+            # g.write_block(0, bytes(b'aaa'))
+            f.write_block(1, bytes(arr_nodes[0]))
+            # for i in xrange(self.max_elem):
+                # g.write_block(1, bytes(arr_nodes[i]))
+            print(f.read_block(list(xrange(self.max_elem))))
+
+    def search(self, item): #list_item : if any item in the list_item is in bloom filter visit all children 
         depth = self.tree.depth()
         stack = [] 
         nodes_visited = [] 
@@ -87,30 +117,16 @@ class bftree(object):
         access_depth = [[] for i in range(depth+1)] #nodes accessed per depth 
         root_bf = self.tree[self.root].data
 
-        # for i in range(len(list_item)):
-        #     thing = list_item[i]
-        #     if type(thing) == str: 
-        #         temp = ''.join(format(ord(k), '08b') for k in thing)
-        #         thing = [int(k) for k in temp]
-        #         thing = thing + ([0 for i in range(self.n - len(list_item))]) #padding
-        #         list_item[i] = thing
-            
-
         access_depth[0].append(self.root)
         current_elsh = self.eLSH[0]
-        # for item in list_item: 
-            # print(item)
         current_hash = current_elsh.hash(item)
-        # print(current_hash)
         for j in current_hash:
-            # p = pickle.dumps(j)
             p = str(j)
             if p in root_bf: 
                 stack.append(self.root)
                 break
 
         while stack != []: 
-            # print("stack", stack)
             current_node = stack.pop()
             nodes_visited.append(current_node)
             children = self.tree.children(current_node) 
@@ -128,11 +144,8 @@ class bftree(object):
                         count = 0 
                         for j in current_hash: 
                             count += 1
-                            # p = pickle.dumps(j)
                             p = str(j) 
                             if p in self.tree[child].data: 
-                                print("CHILD:", child)
-                                print("COUNT HASH:", count)
                                 stack.append(child)
                                 break
             else: 
@@ -154,34 +167,30 @@ def find_size(bftree):
 
     return total_size
 
-
-
-# t = bftree(2, 0.01, 8)
-# t.build_index(['John', 'Jane', 'Smith', 'Doe', 'Abe'])
-# t.tree.show()
-# r = t.tree.get_node(4)
-# print(r)
-# r = t.tree.depth(2)
-# print(type(r))
-# print("CHILDRE", t.tree.children(15))
-# print(t.search('Abe'))
-# print(sys.getsizeof(t.tree))
-# print(find_size(t))
-
-# from test_data import mock_data
-# t = bftree(5, 0.01, 1000)
-# t.build_index(mock_data)
-
 #small test 
 from other import try_data
 import random
 
-t = bftree(2, 0.01, 9)
-t.build_index(try_data)
-t.tree.show()
-attempt = try_data[0]
-# for i in range(200): 
-#     index = random.randrange(0,1024) 
-#     attempt[index] = not attempt[index]
-s = t.search(attempt)
-print(s)
+n = 2
+fpr = 0.000001 
+temp_l = 1000
+
+try_nums = [16]
+
+for n in try_nums: 
+    print('\n--- size of database = %i ---' %n )
+    try_data = ([[random.getrandbits(1) for i in range(1024)] for i in range(n)])
+
+    t = bftree(2, fpr, n, l = temp_l)
+    t.build_index(try_data)
+    # print(t.tree.all_nodes())
+    # t.oram()
+    t.tree.show()
+    child = random.randint(0,n-1)
+    attempt = try_data[child]
+    p_child = child + 16
+    print("Search for leaf %i" % p_child)
+    s = t.search(attempt)
+    print("All nodes visited:", s[0])
+    print("Matched leaf nodes:", s[1])
+    print("Nodes matched at each level:", s[2])
