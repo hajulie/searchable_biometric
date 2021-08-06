@@ -11,6 +11,7 @@ class LSH:
         self.c = c
 
     def hash(self, x):
+        # print(self.i, print(x))
         return self.i, x[self.i]
 
     def getTAR(self):
