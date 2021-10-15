@@ -1,37 +1,44 @@
-from bloom_filter import BloomFilter
+from bloom_filter2 import BloomFilter
 from treelib import Node, Tree
 import math, os, sys
 import eLSH as extended_lsh
 from LSH import LSH
 import pickle
+from Crypto.Util.Padding import pad, unpad
 
 import pyoram
 from pyoram.util.misc import MemorySize
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
-from six.moves import xrange
-
-storage_name = "oram.bin"
-
+storage_name = "heap.bin"
 
 class bftree(object):
-    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c= 0.5 * (1024/307), s=12, l=1000):
+    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c= 0.5 * (1024/307), s=12, l=1000, block_size=256):
         self.branching_factor = branching_f
         self.error_rate = error_rate
         self.max_elem = max_elements
         self.tree = None
         self.root = branching_f-1
-        self.depth = None
+        self.depth = None 
         self.eLSH = None
         self.n = n
         self.r = r
         self.c = c
         self.s = s
-        self.l = l 
+        self.l = l
+
+        self.oram = None
+        self.storage_name = "heap.bin"
+        self.block_size = block_size #padding block size 
+        self.block_count = None
+        self.oram_block_size = 256
+        self.map = None
 
     #creates a new bloom filter with elements from actual_elements
     def new_filter(self, num_expected_elements, actual_elements=None): 
         temp = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
+        # print("pickle:", len(pickle.dumps(temp)))
+        # print("num bits:", temp.num_bits_m)
         return temp
 
     def add_with_eLSH(self, filter, elsh, elements): #add to bloom filter with applying eLSH 
@@ -54,6 +61,7 @@ class bftree(object):
         tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
         self.depth = tree_depth
         self.eLSH = [None for i in range(tree_depth + 1)]
+        self.block_count = 2**(self.depth+1)-1
 
         #elsh object for root 
         current_elsh = extended_lsh.eLSH(LSH, self.n, self.r, self.c, self.s, self.l)
@@ -89,25 +97,84 @@ class bftree(object):
         arr_nodes = self.tree.all_nodes()
         return arr_nodes
 
-    def oram(self): #UNFINISHED AND DOES NOT WORK 
-        if os.path.exists(storage_name): 
-            os.remove(storage_name)
-        
-        arr_nodes = self.tree_to_arr()
-        for i in range(len(arr_nodes)): 
-            arr_nodes[i] = bytearray(pickle.dumps(arr_nodes[i]))
-        print(arr_nodes)
+    def put_oram(self): #UNFINISHED AND DOES NOT WORK 
+        #calculate top level size 
+        size_root = len(pickle.dumps(self.tree.get_node(self.root).data)) // self.oram_block_size
+        self.block_count = size_root * self.max_elem
 
-        f = PathORAM.setup(storage_name, block_size=3*16, block_count=self.max_elem, storage_type='file')
+        ###HELPER FUNCTIONS#
+        #padding
+        def oram_padding(item): 
+            #takes the last block of the existing string, and pads it 
+            last_block = len(item)% self.block_size
+            front, end = item[:last_block], item[-last_block:]
+            if len(end) == self.block_size: 
+                with_pad = end
+            else:
+                with_pad = pad(end, self.block_size)
+            temp = front + with_pad 
+            
+            return temp
+
+            # #pads the rest of the block meant for oram with 00s 
+            # temp_block = b'\x00' * self.block_size
+            # blocks_to_add = (self.oram_block_size - len(temp))/self.block_size
+            # # assert blocks_to_add - int(blocks_to_add) == 0
+            # new = temp + (temp_block * int(blocks_to_add))
+            # return new
+        ###
+
+        if os.path.exists(self.storage_name):
+            os.remove(self.storage_name)
+
+        f = PathORAM.setup(self.storage_name, block_size= self.oram_block_size, block_count=self.block_count, storage_type='file')
         f.close()
         
-        with PathORAM(storage_name, f.stash, f.position_map, key=f.key, storage_type='file') as f: 
-            orig = f.read_blocks(list(xrange(self.max_elem)))
-            # g.write_block(0, bytes(b'aaa'))
-            f.write_block(1, bytes(arr_nodes[0]))
-            # for i in xrange(self.max_elem):
-                # g.write_block(1, bytes(arr_nodes[i]))
-            print(f.read_block(list(xrange(self.max_elem))))
+        self.map = {val : [] for val in range(self.root, self.max_elem)}
+        f = PathORAM(self.storage_name, f.stash, f.position_map, key=f.key, storage_type='file')
+
+        add_to = 0 
+        for node in range(self.root, self.max_elem): 
+            temp = pickle.dumps(self.tree.get_node(node).data)
+
+            temp_blocks = []
+            num_blocks = len(temp) // self.oram_block_size
+            for k in range(num_blocks):
+                block, temp = temp[:self.oram_block_size], temp[self.oram_block_size:]
+                temp_blocks.append(block)
+            
+            padded = pad(temp, self.block_size)
+            temp_blocks.append(padded)
+
+            for j in range(len(temp_blocks)):
+                f.write_block(add_to, temp_blocks[j])
+                self.map[node].append(add_to)
+                add_to += 1
+
+        self.oram = f
+        print(self.map)
+
+    def search_oram(self, node): 
+        raw_data = []
+        in_map = self.map[node]
+        for pos in in_map:
+            raw_data.append(self.oram.read_block(pos))
+
+        new_split = [] 
+        for v in raw_data: 
+            v = bytes(v)
+            if self.oram_block_size != self.block_size:
+                for i in range(0, self.oram_block_size//self.block_size): 
+                    front, v = v[:self.block_size], v[self.block_size:]
+                    if front != b'x\00' * self.block_size:
+                        new_split += [front]
+        
+        new_split[-1] = unpad(new_split[-1], self.block_size)
+        orig = b''.join(new_split)
+        orig = pickle.loads(orig)
+
+        return orig
+            
 
     def search(self, item): #list_item : if any item in the list_item is in bloom filter visit all children 
         depth = self.tree.depth()
@@ -168,14 +235,13 @@ def find_size(bftree):
     return total_size
 
 #small test 
-from other import try_data
 import random
 
 n = 2
 fpr = 0.000001 
 temp_l = 1000
 
-try_nums = [16]
+try_nums = [8]
 
 for n in try_nums: 
     print('\n--- size of database = %i ---' %n )
@@ -184,13 +250,14 @@ for n in try_nums:
     t = bftree(2, fpr, n, l = temp_l)
     t.build_index(try_data)
     # print(t.tree.all_nodes())
-    # t.oram()
-    t.tree.show()
-    child = random.randint(0,n-1)
-    attempt = try_data[child]
-    p_child = child + 16
-    print("Search for leaf %i" % p_child)
-    s = t.search(attempt)
-    print("All nodes visited:", s[0])
-    print("Matched leaf nodes:", s[1])
-    print("Nodes matched at each level:", s[2])
+    # t.tree.show()
+    t.put_oram()
+    # print("test:", len(pickle.dumps(t.tree.get_node(1).data)))
+    # child = random.randint(0,n-1)
+    # attempt = try_data[child]
+    # p_child = child + n
+    # print("Search for leaf %i" % p_child)
+    # s = t.search(attempt)
+    # print("All nodes visited:", s[0])
+    # print("Matched leaf nodes:", s[1])
+    # print("Nodes matched at each level:", s[2])
