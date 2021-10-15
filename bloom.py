@@ -20,6 +20,8 @@ class bftree(object):
         self.tree = None
         self.root = branching_f-1
         self.depth = None 
+        self.num_blocks = None
+
         self.eLSH = None
         self.n = n
         self.r = r
@@ -61,7 +63,8 @@ class bftree(object):
         tree_depth = math.ceil(math.log(num_elements, self.branching_factor))
         self.depth = tree_depth
         self.eLSH = [None for i in range(tree_depth + 1)]
-        self.block_count = 2**(self.depth+1)-1
+        self.num_blocks = 2**(self.depth+1)-1
+        print("self.blockcount:", self.block_count)
 
         #elsh object for root 
         current_elsh = extended_lsh.eLSH(LSH, self.n, self.r, self.c, self.s, self.l)
@@ -97,7 +100,7 @@ class bftree(object):
         arr_nodes = self.tree.all_nodes()
         return arr_nodes
 
-    def put_oram(self): #UNFINISHED AND DOES NOT WORK 
+    def put_oram(self): 
         #calculate top level size 
         size_root = len(pickle.dumps(self.tree.get_node(self.root).data)) // self.oram_block_size
         self.block_count = size_root * self.max_elem
@@ -130,11 +133,14 @@ class bftree(object):
         f = PathORAM.setup(self.storage_name, block_size= self.oram_block_size, block_count=self.block_count, storage_type='file')
         f.close()
         
-        self.map = {val : [] for val in range(self.root, self.max_elem)}
+        self.map = {val : [] for val in range(self.root, self.num_blocks)}
         f = PathORAM(self.storage_name, f.stash, f.position_map, key=f.key, storage_type='file')
 
         add_to = 0 
-        for node in range(self.root, self.max_elem): 
+        print("self.block_count:", self.num_blocks)
+        for node in range(self.root, self.num_blocks): 
+            print("node:", node)
+            print("self.tree.get_node(node).data:", self.tree.get_node(node))
             temp = pickle.dumps(self.tree.get_node(node).data)
 
             temp_blocks = []
@@ -152,7 +158,7 @@ class bftree(object):
                 add_to += 1
 
         self.oram = f
-        print(self.map)
+        # print(self.map)
 
     def search_oram(self, node): 
         raw_data = []
@@ -160,19 +166,28 @@ class bftree(object):
         for pos in in_map:
             raw_data.append(self.oram.read_block(pos))
 
+        # print("raw data:", raw_data)
         new_split = [] 
         for v in raw_data: 
             v = bytes(v)
-            if self.oram_block_size != self.block_size:
-                for i in range(0, self.oram_block_size//self.block_size): 
-                    front, v = v[:self.block_size], v[self.block_size:]
-                    if front != b'x\00' * self.block_size:
-                        new_split += [front]
-        
-        new_split[-1] = unpad(new_split[-1], self.block_size)
-        orig = b''.join(new_split)
-        orig = pickle.loads(orig)
+            # if self.oram_block_size != self.block_size:
+            #     for i in range(0, self.oram_block_size//self.block_size): 
+            #         front, v = v[:self.block_size], v[self.block_size:]
+            #         if front != b'x\00' * self.block_size:
+            #             new_split += [front]
 
+            new_split += [v]
+
+        # print("new_split:", new_split)
+
+        if new_split == []: 
+            orig = None
+        else:
+            new_split[-1] = unpad(new_split[-1], self.block_size)
+            orig = b''.join(new_split)
+            orig = pickle.loads(orig)
+        
+        # print("printed orig")
         return orig
             
 
@@ -182,9 +197,13 @@ class bftree(object):
         nodes_visited = [] 
         leaf_nodes = [] 
         access_depth = [[] for i in range(depth+1)] #nodes accessed per depth 
-        root_bf = self.tree[self.root].data
+        print("root:", self.root)
+        print("self.map:", self.map)
+        root_bf = self.search_oram(self.root)
+        print("root bf:", root_bf)
 
         access_depth[0].append(self.root)
+        print("ELSH:", self.eLSH) 
         current_elsh = self.eLSH[0]
         current_hash = current_elsh.hash(item)
         for j in current_hash:
@@ -206,13 +225,15 @@ class bftree(object):
 
                 for c in children: 
                     child = c.identifier 
-                    access_depth[child_depth].append(child)                    
-                    if self.tree[child].data != None: 
+                    access_depth[child_depth].append(child)
+                    child_data = self.search_oram(child)          
+                    print("child_data:", child_data)          
+                    if child_data != None: 
                         count = 0 
                         for j in current_hash: 
                             count += 1
                             p = str(j) 
-                            if p in self.tree[child].data: 
+                            if p in child_data: 
                                 stack.append(child)
                                 break
             else: 
@@ -250,14 +271,14 @@ for n in try_nums:
     t = bftree(2, fpr, n, l = temp_l)
     t.build_index(try_data)
     # print(t.tree.all_nodes())
-    # t.tree.show()
+    t.tree.show()
     t.put_oram()
     # print("test:", len(pickle.dumps(t.tree.get_node(1).data)))
-    # child = random.randint(0,n-1)
-    # attempt = try_data[child]
-    # p_child = child + n
-    # print("Search for leaf %i" % p_child)
-    # s = t.search(attempt)
-    # print("All nodes visited:", s[0])
-    # print("Matched leaf nodes:", s[1])
-    # print("Nodes matched at each level:", s[2])
+    child = random.randint(0,n-1)
+    attempt = try_data[child]
+    p_child = child + n
+    print("Search for leaf %i" % p_child)
+    s = t.search(attempt)
+    print("All nodes visited:", s[0])
+    print("Matched leaf nodes:", s[1])
+    print("Nodes matched at each level:", s[2])
