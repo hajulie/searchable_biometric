@@ -90,7 +90,7 @@ def test_elsh(n, r, c, s, l):
 
     elsh = eLSH(LSH, n, r, c, s, l)
     hx = elsh.hash(x)
-    print(type(hx[0]))
+    print("test jh:", (hx[0]))
     hx_50 = elsh.hash(x_50)
     hx_307 = elsh.hash(x_307)
     hx_600 = elsh.hash(x_600)

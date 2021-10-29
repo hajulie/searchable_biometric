@@ -13,7 +13,7 @@ from pyoram.oblivious_storage.tree.path_oram import PathORAM
 storage_name = "heap.bin"
 
 class bftree(object):
-    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c= 0.5 * (1024/307), s=12, l=1, block_size=256):
+    def __init__(self, branching_f, error_rate, max_elements, n=1024, r=307, c= 0.5 * (1024/307), s=12, l=1000, block_size=256):
         self.branching_factor = branching_f
         self.error_rate = error_rate
         self.max_elem = max_elements * l
@@ -29,7 +29,7 @@ class bftree(object):
         self.n = n
         self.r = r
         self.c = c
-        self.s = s
+        self.s = s #samples s bits l times 
         self.l = l
 
         #oram variable
@@ -279,33 +279,34 @@ def find_size(bftree):
 
     return total_size
 
-#small test 
-import random
+if __name__ == '__main__':
+    #small test 
+    import random
 
-n = 2
-fpr = 0.000001 
-temp_l = 1000
+    n = 2
+    fpr = 0.000001 
+    temp_l = 1000
 
-try_nums = [1]
+    try_nums = [1]
 
-for n in try_nums: 
-    print('\n--- size of database = %i ---' %n )
-    try_data = ([[random.getrandbits(1) for i in range(1024)] for i in range(n)])
+    for n in try_nums: 
+        print('\n--- size of database = %i ---' %n )
+        try_data = ([[random.getrandbits(1) for i in range(1024)] for i in range(n)])
 
-    t = bftree(2, fpr, n, l = temp_l)
-    t.build_index(try_data)
-    # print(t.tree.all_nodes())
-    t.tree.show()
-    for i in range(t.root, t.num_blocks): 
-        print(t.tree.get_node(i))
-    t.put_oram()
-    print("finished putting")
-    # print("test:", len(pickle.dumps(t.tree.get_node(1).data)))
-    child = random.randint(0,n-1)
-    attempt = try_data[child]
-    p_child = child + n
-    print("Search for leaf %i" % p_child)
-    s = t.search(attempt)
-    print("All nodes visited:", s[0])
-    print("Matched leaf nodes:", s[1])
-    print("Nodes matched at each level:", s[2])
+        t = bftree(2, fpr, n, l = temp_l)
+        t.build_index(try_data)
+        # print(t.tree.all_nodes())
+        t.tree.show()
+        for i in range(t.root, t.num_blocks): 
+            print(t.tree.get_node(i))
+        t.put_oram()
+        print("finished putting")
+        # print("test:", len(pickle.dumps(t.tree.get_node(1).data)))
+        child = random.randint(0,n-1)
+        attempt = try_data[child]
+        p_child = child + n
+        print("Search for leaf %i" % p_child)
+        s = t.search(attempt)
+        print("All nodes visited:", s[0])
+        print("Matched leaf nodes:", s[1])
+        print("Nodes matched at each level:", s[2])
