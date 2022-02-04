@@ -12,7 +12,7 @@ def compute_lsh_rates(n, s, r, c):
     fpr = pow(1 - (c*r)/n, s)
     return tpr, fpr
 
-# k = # trees, lsh_tpr = LSH true positive rate, lsh_fpr = LSH false positive rate
+# s = LSH output size, k = # trees, lsh_tpr = LSH true positive rate, lsh_fpr = LSH false positive rate
 def compute_system_rates(k, lsh_tpr, lsh_fpr):
     tpr = 1 - pow(1 - lsh_tpr, k)
     fpr = 1 - pow(1 - lsh_fpr, k)
@@ -51,25 +51,45 @@ def compute_number_nodes_visited(l, k, b, lsh_tpr, lsh_fpr, bf_fpr):
     return nb_nodes
 
 # l = # records, k = # trees, b = branching factor, s = LSH output size
-def nb_nodes_visited_per_level(l, k, b, s):
-    return
+def nb_nodes_visited_per_level(l, k, b, lsh_tpr, lsh_fpr):
+    depth = compute_tree_depth(l, b)
+    nodes = []
+    # root nodes are always visited
+    nodes.append(k)
+
+    for j in range(1, depth):
+        # nodes visited if True/False LSH match (previous nodes is unique)
+        lsh_nodes = (lsh_tpr + lsh_fpr) * b
+        # nodes visited if False BF match (previous nodes are on path node's siblings)
+        bf_nodes = (b - 1) * bf_fpr * b
+        nodes.append(math.ceil(k * (lsh_nodes + bf_nodes)))
+    return nodes
 
 
-def sys_params_to_csv(l, b,  n, r, c, bf_fpr, desired_tpr, desired_fpr):
+def sys_params_to_csv(l, b,  n, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, desired_fpr):
     filename = 'tree_params_csv.csv'
     with open(filename, 'w+') as f:
         # create the csv writer
         writer = csv.writer(f)
 
         for s in range(10, 50, 2):
+            lsh_tpr_s = pow(lsh_tpr, s)
+            lsh_fpr_s = pow(lsh_fpr, s)
+
             for k in range(1000, 50000, 1000):
-                (lsh_tpr, lsh_fpr) = compute_lsh_rates(n, s, r, c)
-                (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr, lsh_fpr)
+                # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
+                (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
+                # print(sys_tpr_s)
+                # print(sys_fpr_s)
 
                 # if rates not good enough, discard
                 if sys_tpr > desired_tpr and sys_fpr < desired_fpr:
-                    nb_nodes = math.floor(compute_number_nodes_visited(l, k, b, lsh_tpr, lsh_fpr, bf_fpr))
-                    row = (s, k, sys_tpr, sys_fpr, nb_nodes)
+                    nodes_per_level = nb_nodes_visited_per_level(l, k, b, lsh_tpr_s, lsh_fpr_s)
+                    print(str(s) + "  " + str(k) + "  " + str(nodes_per_level))
+                    nb_nodes = math.ceil(compute_number_nodes_visited(l, k, b, lsh_tpr_s, lsh_fpr_s, bf_fpr))
+                    print(nb_nodes)
+                    print(k + nodes_per_level[1] * compute_tree_depth(l, b))
+                    row = (s, k, sys_tpr, sys_fpr, nb_nodes, nodes_per_level)
 
                     # write a row to the csv file
                     writer.writerow(row)
@@ -82,32 +102,43 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_file', help="Output file name", type=str, default='params_script.csv')
     parser.add_argument('--db_size', help="Number of records stored in the database", type=int, default=1000000)
+    parser.add_argument('--n', help="Feature vectors size in bits", type=int, default=1024)
     parser.add_argument('--sys_tpr', help="Desired system True Positive Rate (TPR)", type=float, default=0.95)
     parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.01)
     parser.add_argument('--bf_fpr', help="Bloom Filter FPR", type=float, default=0.0001)
+    # parser.add_argument('--lsh_r', help="LSH r param", type=float, default=0.3)
+    # parser.add_argument('--lsh_c', help="LSH c param", type=float, default=0.0001)
+    parser.add_argument('--lsh_tpr', help="LSH TPR", type=float, default=0.7)
+    parser.add_argument('--lsh_fpr', help="LSH FPR", type=float, default=0.5)
     parser.add_argument('--branch', help="Branching factor", type=int, default=2)
     args = parser.parse_args()
 
     db_size = args.db_size
+    n = args.n
     branch_factor = args.branch
     desired_tpr = args.sys_tpr
     desired_fpr = args.sys_fpr
     bf_fpr = args.bf_fpr  # bloom filter fpr, default = 10^-4
-    k = 10000
+    lsh_tpr = args.lsh_tpr
+    lsh_fpr = args.lsh_fpr
+
+    # k = 10000
 
     print("Estimated tree depth = " + str(compute_tree_depth(db_size, branch_factor)))
 
-    n = 1024
-    t = 0.3
-    r = t*n
-    c = 1.7
-    lsh_size = 21
+    # n = 1024
+    # t = 0.3
+    # r = t*n
+    # c = 1.7
+    # # lsh_size = 21
+    # print(1 - r / n)
+    # print(1 - (c * r) / n)
 
-    print("r = " + str(r) + ", cr = " + str(c*r))
+    # print("r = " + str(r) + ", cr = " + str(c*r))
 
-    (lsh_tpr, lsh_fpr) = compute_lsh_rates(n, lsh_size, r, c)
-    print("LSH TPR = " + str(lsh_tpr))
-    print("LSH FPR = " + str(lsh_fpr))
+    # (lsh_tpr, lsh_fpr) = compute_lsh_rates(n, lsh_size, r, c)
+    # print("LSH TPR = " + str(lsh_tpr))
+    # print("LSH FPR = " + str(lsh_fpr))
 
     # (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr, lsh_fpr)
     # print("SYSTEM TPR = " + str(sys_tpr))
@@ -118,5 +149,4 @@ if __name__ == '__main__':
     # print("Total number of nodes visited = " + str(nb_nodes))
     # print("k log n = " + str(k * math.log2(db_size)))
 
-    filename = sys_params_to_csv(db_size, branch_factor, n, r, c, bf_fpr, desired_tpr, desired_fpr)
-
+    filename = sys_params_to_csv(db_size, branch_factor, n, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, desired_fpr)
