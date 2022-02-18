@@ -1,5 +1,5 @@
 import secrets
-import pickle
+import pickle 
 
 # Bit sampling LSH for the Hamming distance
 class LSH:
