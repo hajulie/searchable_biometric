@@ -5,3 +5,4 @@ Required packages:
  * [treelib](https://treelib.readthedocs.io/en/latest/)
  * [pycryptodome](https://www.pycryptodome.org/en/latest/)
  * [pyoram](https://github.com/ghackebeil/PyORAM)
+ * [Numpy](https://numpy.org/)
