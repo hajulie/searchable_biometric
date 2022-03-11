@@ -1,7 +1,22 @@
 from b4_main_tree import main_tree
+import os, glob, numpy
 import random
 import math
 import time
+
+
+
+def compare_vectors(v1, v2):
+    for i in range(len(v1)):
+        if v1[i] != v2[i]:
+            return False
+    return True
+
+def read_fvector(filePath):
+    with open(filePath) as f:
+        for line in f.readlines():
+            temp_str = numpy.fromstring(line, sep=",")
+            return [int(x) for x in temp_str]
 
 def compute_tree_depth(b, nb_nodes):
     return math.floor(math.log(nb_nodes, b))
@@ -13,20 +28,33 @@ def build_rand_dataset(l, n, t):
     for i in range(l):
         feature = [random.getrandbits(1) for i in range(n)]
         dataset.append(feature)
+        query = dataset[i][:]
 
-        query = dataset[i]
         for j in range(math.floor(n*t)):
             b = random.randint(0, n-1)
             query[b] = (query[b] + 1) % 2
+
         queries.append(query)
 
     return dataset, queries
 
 
 def build_ND_dataset():
-    dataset = []
-    queries = []
-    return dataset, queries
+    cwd = os.getcwd()
+    # print(cwd + "//datasets//ND_proximity_irisR_all_features_folders//*")
+    dir_list = glob.glob(cwd + "//datasets//ND_proximity_irisR_all_features_folders//*")
+    nd_dataset={}
+    class_labels={}
+    i=0
+    for dir in dir_list:
+        feat_list = glob.glob(dir+"//*")
+        nd_dataset[i] = [read_fvector(x) for x in feat_list]
+        class_labels[i] = dir
+        i = i+1
+    nd_templates = [nd_dataset[x][0] for x in nd_dataset]
+    print(len(nd_dataset))
+    print(len(nd_templates))
+    return nd_dataset, None
 
 def build_synthetic_dataset():
     dataset = []
@@ -39,10 +67,11 @@ def compute_sys_rates(tree, queries):
     fpr = 0
 
     leaves = tree.subtrees[0].tree.leaves()
+    true_pos = 0
 
     # run queries on whole dataset
     for i in range(len(queries)):
-        true_pos = 0
+
         false_pos = 0
         res = tree.search(queries[i])
 
@@ -52,13 +81,16 @@ def compute_sys_rates(tree, queries):
 
         if int(leaves[i].tag) in res[1]:
             true_pos = true_pos + 1
+            tpr = tpr + 1
             if len(res[1]) > 1:
                 false_pos = false_pos + len(res[1]) - 1
         elif len(res[1]) != 0:
             false_pos = false_pos + len(res[1])
 
-        tpr = tpr + true_pos
         fpr = fpr + false_pos/len(leaves)
+
+
+    print("# true positives = " + str(true_pos))
 
     tpr = tpr/len(queries)
     fpr = fpr/len(queries)
@@ -69,27 +101,22 @@ def compute_sys_rates(tree, queries):
 if __name__ == '__main__':
 
     l = 356 # dataset size
-    k = 1000 # number of trees to build
+    k = 2500 # number of trees to build
     n = 1024 # vector size
 
     branching_factor = 2
     bf_fpr = 0.0001 # Bloom Filter FPR (same for every BFs for now)
-    lsh_size = 12 # LSH output size
+    lsh_size = 25 # LSH output size
     lsh_r = 307
     lsh_c = 0.5 * (1024 / 307)
 
     # build & search using random dataset
     random_data, random_queries = build_rand_dataset(l, n, 0.3)
+
     random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
     t_start = time.time()
-    # TODO debug - fail to build tree for l = 5, 6, 9, 10, maybe other values I haven't tested)
     random_tree.build_index(random_data)
     t_end = time.time()
-
-
-
-    # print(len(random_data))
-    # print(len(random_queries))
 
     (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
     print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
@@ -98,12 +125,15 @@ if __name__ == '__main__':
     # # build & search using ND dataset
     # ND_data, ND_queries = build_ND_dataset()
     # ND_tree = main_tree(branching_factor, bf_fpr, l)
+    # print(ND_data[0])
     # ND_tree.build_index(ND_data)
-    # compute_sys_rates(ND_tree, ND_queries)
-    #
+    # (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
+    # print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
+
     # # build & search using synthetic dataset
     # synthetic_data, synthetic_queries = build_synthetic_dataset()
     # synthetic_tree = main_tree(branching_factor, bf_fpr, l)
     # synthetic_tree.build_index(synthetic_data)
-    # compute_sys_rates(synthetic_tree)
+    # (synth_tpr, synth_fpr) = compute_sys_rates(synthetic_tree)
+    # print("Synthetic dataset/queries : TPR = " + str(synth_tpr) + " - FPR = " + str(synth_fpr))
 
