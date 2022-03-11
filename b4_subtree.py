@@ -8,9 +8,9 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-import pyoram
-from pyoram.util.misc import MemorySize
-from pyoram.oblivious_storage.tree.path_oram import PathORAM
+# import pyoram
+# from pyoram.util.misc import MemorySize
+# from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
 from b4_node import node
 
@@ -44,25 +44,44 @@ class subtree(object):
             res.append(j.hash(item))
         return res
 
+    def compare_LSH(self, hash1, hash2):
+        bits_match = 0
+        for p1, b1 in hash1:
+            for p2, b2 in hash2:
+                if p1 == p2 and b1 != b2:
+                    return False
+                elif p1 == p2 and b1 == b2:
+                    bits_match = bits_match + 1
+                    break
+
+        if bits_match == len(hash1):
+            return True
+        else:
+            return False
+
     #creates a new node: bloom filter with elements from actual_elements
-    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None): 
+    #TODO fix list index out of range bug for some dataset sizes (10 for example)
+    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None, leaf=False):
         if current_node == "root":
-            print("elements", elements)
+            # print("elements", elements)
             #corner case: current_node == "root", parent_node == self.root, 
             bf = BloomFilter(max_elements=(self.l), error_rate=self.error_rate)
             _node_ = node(bf)
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
-        elif elements != None: 
-            bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
-            _node_ = node(bf)
-            _node_.add_multiple(elements)
+        elif elements != None:
+            if leaf:
+                _node_ = elements
+            else:
+                bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
+                _node_ = node(bf)
+                _node_.add_multiple(elements)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
         else: 
             self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
     
-    def build_tree(self, og_elements): 
-        self.tree = Tree() 
+    def build_tree(self, og_elements):
+        self.tree = Tree()
         num_elements = len(og_elements)
         level = 0 
 
@@ -75,24 +94,26 @@ class subtree(object):
 
         current_node = self.root
         parent_node = self.root-1 #-1 is just for it to work overall
-        
-        while level != self.depth: 
-            level += 1 
+
+        while level != self.depth:
+            level += 1
             nodes_in_level = self.branching_factor**level
             items_in_filter = self.branching_factor**(self.depth-level)
+
             if level == self.depth:
                 for n in range(nodes_in_level):
                     current_node += 1 
                     if current_node % self.branching_factor == 0: 
                         parent_node += 1 
 
-                    if n < self.l:
-                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n])
+                    # if n < self.l:
+                    if n < num_elements:
+                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n], leaf=True)
                     else:
                         self.new_node(current_node, parent_node)
 
-            else: 
-                for n in range(nodes_in_level): 
+            else:
+                for n in range(nodes_in_level):
                     current_node += 1
                     if current_node % self.branching_factor == 0: 
                         parent_node += 1
@@ -120,7 +141,7 @@ class subtree(object):
 
         access_depth[0].append(self.root)
         current_hash = self.calculate_LSH(item)
-        print("subtree search hash:", current_hash)
+        # print("subtree search hash:", current_hash)
         if root_bf.in_bloomfilter(current_hash): 
             stack.append(self.root)
 
@@ -134,9 +155,14 @@ class subtree(object):
 
                 for c in children: 
                     child = c.identifier 
-                    access_depth[child_depth].append(child)                    
-                    if self.tree[child].data != None: 
+                    access_depth[child_depth].append(child)
+
+                    if self.tree[child].data != None and child_depth != depth:
                         if self.tree[child].data.in_bloomfilter(current_hash): 
+                            stack.append(child)
+                            break
+                    elif self.tree[child].data != None and child_depth == depth:
+                        if self.compare_LSH(self.tree[child].data, current_hash):
                             stack.append(child)
                             break
             else: 
@@ -147,6 +173,6 @@ class subtree(object):
         #     returned_iris.append(iris)
         # return nodes_visited, leaf_nodes, access_depth, returned_iris
 
-        print("subtree:", nodes_visited, "\n", leaf_nodes, "\n", access_depth)
+        # print("subtree:", nodes_visited, "\n", leaf_nodes, "\n", access_depth)
 
         return nodes_visited, leaf_nodes, access_depth
