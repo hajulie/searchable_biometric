@@ -30,9 +30,13 @@ def build_rand_dataset(l, n, t):
         dataset.append(feature)
         query = dataset[i][:]
 
-        for j in range(math.floor(n*t)):
+        j = 0
+        while j < math.floor(n*t):
             b = random.randint(0, n-1)
-            query[b] = (query[b] + 1) % 2
+
+            if query[b] == dataset[i][b]:
+                query[b] = (query[b] + 1) % 2
+                j = j + 1
 
         queries.append(query)
 
@@ -41,8 +45,7 @@ def build_rand_dataset(l, n, t):
 
 def build_ND_dataset():
     cwd = os.getcwd()
-    # print(cwd + "//datasets//ND_proximity_irisR_all_features_folders//*")
-    dir_list = glob.glob(cwd + "//datasets//ND_proximity_irisR_all_features_folders//*")
+    dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
     nd_dataset={}
     class_labels={}
     i=0
@@ -51,10 +54,13 @@ def build_ND_dataset():
         nd_dataset[i] = [read_fvector(x) for x in feat_list]
         class_labels[i] = dir
         i = i+1
+
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
-    print(len(nd_dataset))
+    nd_queries = [nd_dataset[x][1] for x in nd_dataset]
     print(len(nd_templates))
-    return nd_dataset, None
+    print(len(nd_queries))
+
+    return nd_templates, nd_queries
 
 def build_synthetic_dataset():
     dataset = []
@@ -89,8 +95,8 @@ def compute_sys_rates(tree, queries):
 
         fpr = fpr + false_pos/len(leaves)
 
-
     print("# true positives = " + str(true_pos))
+    print("# false positives = " + str(false_pos))
 
     tpr = tpr/len(queries)
     fpr = fpr/len(queries)
@@ -101,12 +107,12 @@ def compute_sys_rates(tree, queries):
 if __name__ == '__main__':
 
     l = 356 # dataset size
-    k = 2500 # number of trees to build
+    k = 4000 # number of trees to build
     n = 1024 # vector size
 
     branching_factor = 2
     bf_fpr = 0.0001 # Bloom Filter FPR (same for every BFs for now)
-    lsh_size = 25 # LSH output size
+    lsh_size = 20 # LSH output size
     lsh_r = 307
     lsh_c = 0.5 * (1024 / 307)
 
@@ -122,13 +128,13 @@ if __name__ == '__main__':
     print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
     print("build_index takes " + str(t_end - t_start) + " seconds.")
 
-    # # build & search using ND dataset
-    # ND_data, ND_queries = build_ND_dataset()
-    # ND_tree = main_tree(branching_factor, bf_fpr, l)
-    # print(ND_data[0])
-    # ND_tree.build_index(ND_data)
-    # (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
-    # print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
+    # build & search using ND dataset
+    ND_data, ND_queries = build_ND_dataset()
+    ND_tree = main_tree(branching_factor, bf_fpr, l)
+    ND_tree.build_index(ND_data)
+
+    (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
+    print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
 
     # # build & search using synthetic dataset
     # synthetic_data, synthetic_queries = build_synthetic_dataset()
