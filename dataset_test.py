@@ -3,6 +3,8 @@ import os, glob, numpy
 import random
 import math
 import time
+import argparse
+
 
 
 
@@ -105,41 +107,49 @@ def compute_sys_rates(tree, queries):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    args = parser.parse_args()
 
     l = 356 # dataset size
-    k = 4000 # number of trees to build
+    k = args.nb_trees # number of trees to build
     n = 1024 # vector size
 
     branching_factor = 2
     bf_fpr = 0.0001 # Bloom Filter FPR (same for every BFs for now)
-    lsh_size = 20 # LSH output size
+    lsh_size = args.lsh_size # LSH output size
     lsh_r = 307
     lsh_c = 0.5 * (1024 / 307)
 
     # build & search using random dataset
-    random_data, random_queries = build_rand_dataset(l, n, 0.3)
+    if args.dataset == "rand" or args.dataset == "all":
+        random_data, random_queries = build_rand_dataset(l, n, 0.3)
 
-    random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
-    t_start = time.time()
-    random_tree.build_index(random_data)
-    t_end = time.time()
+        random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        t_start = time.time()
+        random_tree.build_index(random_data)
+        t_end = time.time()
 
-    (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
-    print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
-    print("build_index takes " + str(t_end - t_start) + " seconds.")
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
+        print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
+        print("build_index takes " + str(t_end - t_start) + " seconds.")
 
     # build & search using ND dataset
-    ND_data, ND_queries = build_ND_dataset()
-    ND_tree = main_tree(branching_factor, bf_fpr, l)
-    ND_tree.build_index(ND_data)
+    if args.dataset == "nd" or args.dataset == "all":
+        ND_data, ND_queries = build_ND_dataset()
+        ND_tree = main_tree(branching_factor, bf_fpr, l)
+        ND_tree.build_index(ND_data)
 
-    (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
-    print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
+        (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
+        print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
 
-    # # build & search using synthetic dataset
-    # synthetic_data, synthetic_queries = build_synthetic_dataset()
-    # synthetic_tree = main_tree(branching_factor, bf_fpr, l)
-    # synthetic_tree.build_index(synthetic_data)
-    # (synth_tpr, synth_fpr) = compute_sys_rates(synthetic_tree)
-    # print("Synthetic dataset/queries : TPR = " + str(synth_tpr) + " - FPR = " + str(synth_fpr))
+    # build & search using synthetic dataset
+    if args.dataset == "synth" or args.dataset == "all":
+        synthetic_data, synthetic_queries = build_synthetic_dataset()
+        synthetic_tree = main_tree(branching_factor, bf_fpr, l)
+        synthetic_tree.build_index(synthetic_data)
+        (synth_tpr, synth_fpr) = compute_sys_rates(synthetic_tree)
+        print("Synthetic dataset/queries : TPR = " + str(synth_tpr) + " - FPR = " + str(synth_fpr))
 
