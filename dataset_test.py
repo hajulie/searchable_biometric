@@ -44,7 +44,6 @@ def build_rand_dataset(l, n, t):
 
     return dataset, queries
 
-
 def build_ND_dataset():
     cwd = os.getcwd()
     dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
@@ -59,15 +58,42 @@ def build_ND_dataset():
 
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
-    print(len(nd_templates))
-    print(len(nd_queries))
+    # print(len(nd_templates))
+    # print(len(nd_queries))
 
     return nd_templates, nd_queries
 
 def build_synthetic_dataset():
     dataset = []
+    labels = []
+
+    cwd = os.getcwd()
+    file_list = glob.glob(cwd + "//datasets//synthetic_dataset//*")
+    for x in file_list:
+        dataset.append(read_fvector(x))
+        labels.append(x[len(x)-9:])
+
+    return dataset
+
+def build_mixed_dataset(data1, queries1, l1, data2, l2):
+    data = []
     queries = []
-    return dataset, queries
+
+    # randomly pick l1 vectors and queries from dataset 1
+    chosen_ones = random.sample(range(len(data1)), l1)
+    for i in chosen_ones:
+        data.append(data1[i])
+        queries.append(queries1[i])
+
+    # randomly pick l2 vectors from dataset 2
+    chosen_ones = random.sample(range(len(data2)), l2)
+    for i in chosen_ones:
+        data.append(data2[i])
+
+    # print(len(data))
+    # print(len(queries))
+
+    return data, queries
 
 
 def compute_sys_rates(tree, queries):
@@ -134,22 +160,34 @@ if __name__ == '__main__':
 
         (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
         print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
-        print("build_index takes " + str(t_end - t_start) + " seconds.")
+        print("Random dataset/queries : build_index takes " + str(t_end - t_start) + " seconds.")
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
         ND_data, ND_queries = build_ND_dataset()
         ND_tree = main_tree(branching_factor, bf_fpr, l)
+        t_start = time.time()
         ND_tree.build_index(ND_data)
+        t_end = time.time()
 
         (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
         print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
+        print("ND 0405 dataset/queries : build_index takes " + str(t_end - t_start) + " seconds.")
 
-    # build & search using synthetic dataset
+    # build & search with mix of ND and synthetic dataset (150/206) and queries from ND (150)
     if args.dataset == "synth" or args.dataset == "all":
-        synthetic_data, synthetic_queries = build_synthetic_dataset()
-        synthetic_tree = main_tree(branching_factor, bf_fpr, l)
-        synthetic_tree.build_index(synthetic_data)
-        (synth_tpr, synth_fpr) = compute_sys_rates(synthetic_tree)
-        print("Synthetic dataset/queries : TPR = " + str(synth_tpr) + " - FPR = " + str(synth_fpr))
+        # retrieve both synthetic and ND datasets
+        synthetic_data = build_synthetic_dataset()
+        ND_data, ND_queries = build_ND_dataset()
+
+        # build mixed dataset and corresponding queries
+        mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 150, synthetic_data, 206)
+
+        mixed_tree = main_tree(branching_factor, bf_fpr, l)
+        t_start = time.time()
+        mixed_tree.build_index(mixed_data)
+        t_end = time.time()
+        (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries)
+        print("Mixed synthetic & ND dataset/queries : TPR = " + str(mixed_tpr) + " - FPR = " + str(mixed_fpr))
+        print("Mixed synthetic & ND dataset/queries : build_index takes " + str(t_end - t_start) + " seconds.")
 
