@@ -32,13 +32,10 @@ def build_rand_dataset(l, n, t):
         dataset.append(feature)
         query = dataset[i][:]
 
-        j = 0
-        while j < math.floor(n*t):
-            b = random.randint(0, n-1)
-
-            if query[b] == dataset[i][b]:
-                query[b] = (query[b] + 1) % 2
-                j = j + 1
+        # randomly sample t error bits to be inverted
+        error_bits = random.sample(range(n), math.floor(n*t))
+        for b in error_bits:
+            query[b] = (query[b] + 1) % 2
 
         queries.append(query)
 
@@ -58,8 +55,6 @@ def build_ND_dataset():
 
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
-    # print(len(nd_templates))
-    # print(len(nd_queries))
 
     return nd_templates, nd_queries
 
@@ -89,9 +84,6 @@ def build_mixed_dataset(data1, queries1, l1, data2, l2):
     chosen_ones = random.sample(range(len(data2)), l2)
     for i in chosen_ones:
         data.append(data2[i])
-
-    # print(len(data))
-    # print(len(queries))
 
     return data, queries
 
@@ -181,7 +173,7 @@ if __name__ == '__main__':
         ND_data, ND_queries = build_ND_dataset()
 
         # build mixed dataset and corresponding queries
-        mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 150, synthetic_data, 206)
+        mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 20, synthetic_data, 336)
 
         mixed_tree = main_tree(branching_factor, bf_fpr, l)
         t_start = time.time()
