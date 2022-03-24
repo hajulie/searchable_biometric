@@ -88,6 +88,7 @@ def build_mixed_dataset(data1, queries1, l1, data2, l2):
     return data, queries
 
 
+# only works if tree leaves order are not randomized !!!!
 def compute_sys_rates(tree, queries):
     tpr = 0
     fpr = 0
@@ -99,19 +100,22 @@ def compute_sys_rates(tree, queries):
     for i in range(len(queries)):
 
         false_pos = 0
-        res = tree.search(queries[i])
+        leaves_match = tree.search(queries[i])
 
         print("query = " + str(i))
         print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
+
+        # get rid of duplicates in results
+        res = list(set(leaves_match[1]))
         print(res)
 
-        if int(leaves[i].tag) in res[1]:
+        if int(leaves[i].tag) in res:
             true_pos = true_pos + 1
             tpr = tpr + 1
-            if len(res[1]) > 1:
-                false_pos = false_pos + len(res[1]) - 1
-        elif len(res[1]) != 0:
-            false_pos = false_pos + len(res[1])
+            if len(res) > 1:
+                false_pos = false_pos + len(res) - 1
+        elif len(res) != 0:
+            false_pos = false_pos + len(res)
 
         fpr = fpr + false_pos/len(leaves)
 
@@ -166,7 +170,7 @@ if __name__ == '__main__':
         print("ND 0405 dataset/queries : TPR = " + str(ND_tpr) + " - FPR = " + str(ND_fpr))
         print("ND 0405 dataset/queries : build_index takes " + str(t_end - t_start) + " seconds.")
 
-    # build & search with mix of ND and synthetic dataset (150/206) and queries from ND (150)
+    # build & search with mix of ND and synthetic dataset and queries corresponding to chosen ND vectors
     if args.dataset == "synth" or args.dataset == "all":
         # retrieve both synthetic and ND datasets
         synthetic_data = build_synthetic_dataset()
