@@ -91,10 +91,10 @@ class subtree(object):
                     if current_node % self.branching_factor == 0: 
                         parent_node += 1 
 
-                        if n < self.l: 
-                            self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n])
-                        else: 
-                            self.new_node(current_node, parent_node)
+                    if n < self.l:
+                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n])
+                    else:
+                        self.new_node(current_node, parent_node)
 
             else: 
                 for n in range(nodes_in_level): 
