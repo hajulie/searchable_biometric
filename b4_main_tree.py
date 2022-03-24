@@ -14,8 +14,9 @@ from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
 from b4_node import node
 from b4_subtree import subtree
+from b4_iris import iris
 
-storage_name = "heap.bin"
+# storage_name = "heap.bin"
 
 class main_tree(object): 
 
@@ -38,6 +39,8 @@ class main_tree(object):
 
         self.subtrees = [None for i in range(l)] #keeps track of subtrees 
         self.hash_to_iris = {}
+
+        self.total_nodes = 0 
 
     #compute eLSH and returns the list of length l
     def compute_eLSH_one(self, element): 
@@ -62,28 +65,26 @@ class main_tree(object):
         return n
 
     #TREE SPECIFIC FUNCS 
-
     def build_index(self, elements):
         num_elements = len(elements)
         level = 0 #levels increase going down 
 
         self.eLSH = eLSH_import.eLSH(LSH, self.n, self.r, self.c, self.s, self.l)
         self.lsh = self.eLSH.hashes
-        print("self.lsh:", len(self.lsh))
         self.compute_eLSH(elements)
 
         for h in range(self.l): 
             st = subtree(self.branching_factor, self.error_rate, self.lsh[h])
             st.build_tree( elements )
             self.subtrees[h] = st 
+            self.total_nodes += st.num_nodes
 
-        print(self.subtrees) #print subtrees
-        for i in self.subtrees: 
-            print("subtree:", i)
-            print("show", i.tree)
+        # print(self.subtrees) #print subtrees
+        # for i in self.subtrees: 
+            # print("subtree:", i)
+            # print("show", i.tree)
 
     def search(self, item): 
-        # print("tree, searching for:", item)
         nodes_visited = [] 
         leaf_nodes = [] 
         returned_iris = [] 
@@ -91,10 +92,6 @@ class main_tree(object):
         
         for sub_tree in self.subtrees: 
             st_nodes, st_leaf, st_access = sub_tree.search(item)
-
-            # for leaf in st_leaf:
-            #     iris = self.hash_to_iris[sub_tree.get_leaf_node(leaf).data[0]]
-            #     returned_iris.append(iris)
 
             nodes_visited += st_nodes
             leaf_nodes += st_leaf
@@ -106,9 +103,9 @@ if __name__ == '__main__':
     #small test 
     import random
 
-    n = 2
+    # n = 100
     fpr = 0.0001 
-    temp_l = 1
+    temp_l = 2
 
     try_nums = [2]
 
@@ -116,18 +113,23 @@ if __name__ == '__main__':
         print('\n--- size of database = %i ---' %n )
         try_data = ([[random.getrandbits(1) for i in range(1024)] for i in range(n)])
 
+        # temp1 = iris(try_data[0])
+        # print((temp1))
+
+
         t = main_tree(2, fpr, l = temp_l)
         t.build_index(try_data)
+        print("tree built")
         # t.tree.show()
         child = random.randint(0,n-1)
         attempt = try_data[child]
         p_child = child
         # print("Depth of tree: ", t.tree.depth())
-        print("Search for leaf %i" % p_child)
+        # print("Search for leaf %i" % p_child)
         s = t.search(attempt)
-        print("All nodes visited:", s[0])
-        print("Matched leaf nodes:", s[1])
-        print("Nodes matched at each level:", s[2])
+        # print("All nodes visited:", s[0])
+        # print("Matched leaf nodes:", s[1])
+        # print("Nodes matched at each level:", s[2])
         
         match = 0 
         non = 0
@@ -138,5 +140,6 @@ if __name__ == '__main__':
                 else: 
                     non += 1 
 
-        print("Matches:", match)
-        print("Non Matches:", non)
+        # print("Matches:", match)
+        # print("Non Matches:", non)
+

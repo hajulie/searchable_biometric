@@ -22,18 +22,18 @@ class node(object):
         self.items.append(item)
 
     def add_multiple(self, items): 
-        print("add mul items:", items)
+        # print("add mul items:", items)
         if type(items[0]) == list:
             for i in items:
-                print("add:", i)
+                # print("add:", i)
                 self.add_item(i) 
         else: 
-            print("add:", items)
+            # print("add:", items)
             self.add_item(items)
 
     def in_bloomfilter(self, item): 
         str_item = str(item)
-        print("in bf item:", item)
-        print("node items:", self.items)
-        print("tf:", str_item in self.bloom_filter)
+        # print("in bf item:", item)
+        # print("node items:", self.items)
+        # print("tf:", str_item in self.bloom_filter)
         return str_item in self.bloom_filter

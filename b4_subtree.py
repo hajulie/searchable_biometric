@@ -22,6 +22,7 @@ class subtree(object):
         self.l = len(lsh)
         self.branching_factor = branching_f
         self.error_rate = error_rate
+        self.num_nodes = 0 
         self.max_elem = None
         
         self.tree = None
@@ -31,23 +32,27 @@ class subtree(object):
     #calculate the number of max elements based on the size of the given list 
     def calculate_max_elem(self, num_elements): 
         #leaf nodes are hash output
-        # self.max_elem = self.l * (2**(math.ceil(math.log2(num_elements)))) #l * (2^{ceil(log_2(elements in list))})
         self.max_elem = 2**(math.ceil(math.log2(num_elements)))
 
     #calculate depth of the tree 
     def calculate_depth(self):
         self.depth = math.ceil(math.log(self.max_elem, self.branching_factor))
 
+    #helper func to calculate lsh 
     def calculate_LSH(self, item): 
         res = [] 
         for i, j in enumerate(self.lsh): 
             res.append(j.hash(item))
         return res
 
+    def get_node_data(node):
+        #might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
+        return self.tree.get_node(node).data.bloom_filter
+
     #creates a new node: bloom filter with elements from actual_elements
     def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None): 
+        self.num_nodes += 1 
         if current_node == "root":
-            print("elements", elements)
             #corner case: current_node == "root", parent_node == self.root, 
             bf = BloomFilter(max_elements=(self.l), error_rate=self.error_rate)
             _node_ = node(bf)
@@ -120,7 +125,7 @@ class subtree(object):
 
         access_depth[0].append(self.root)
         current_hash = self.calculate_LSH(item)
-        print("subtree search hash:", current_hash)
+        # print("subtree search hash:", current_hash)
         if root_bf.in_bloomfilter(current_hash): 
             stack.append(self.root)
 
@@ -147,6 +152,6 @@ class subtree(object):
         #     returned_iris.append(iris)
         # return nodes_visited, leaf_nodes, access_depth, returned_iris
 
-        print("subtree:", nodes_visited, "\n", leaf_nodes, "\n", access_depth)
+        # print("subtree:", nodes_visited, "\n", leaf_nodes, "\n", access_depth)
 
         return nodes_visited, leaf_nodes, access_depth
