@@ -99,3 +99,17 @@ class storage_layer(object):
                 
                 self.oram_map.append(f)
 
+
+
+
+def apply_storage_layer(main_tree, block_size=256, oram=None):
+    tree = storage_layer(maintree, block_size)
+    tree.create_map()
+
+    if oram == 0: #one oram layer
+        tree.put_oram()
+
+    elif oram == 1: # multiple oram layers 
+        tree.mul_oram 
+
+

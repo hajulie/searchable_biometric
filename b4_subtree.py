@@ -12,7 +12,7 @@ import pyoram
 from pyoram.util.misc import MemorySize
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
-from b4_node import node
+from b4_objs import node, Iris, to_iris
 
 storage_name = "heap.bin"
 
@@ -73,7 +73,7 @@ class subtree(object):
 
         self.calculate_max_elem(num_elements) #max number of elements WITH calculation of eLSH outputs 
         self.calculate_depth()
-        elements = [self.calculate_LSH(i) for i in og_elements]
+        elements = [self.calculate_LSH(i.vector) for i in og_elements]
 
         #initialize root node
         self.new_node("root", self.root, num_elements, elements=elements)
@@ -125,7 +125,6 @@ class subtree(object):
 
         access_depth[0].append(self.root)
         current_hash = self.calculate_LSH(item)
-        # print("subtree search hash:", current_hash)
         if root_bf.in_bloomfilter(current_hash): 
             stack.append(self.root)
 
@@ -146,12 +145,10 @@ class subtree(object):
                             break
             else: 
                 leaf_nodes.append(current_node)
-        
-        # for l in leaf_nodes: 
-        #     iris = self.hash_to_iris[self.tree.get_node(l).data]
-        #     returned_iris.append(iris)
-        # return nodes_visited, leaf_nodes, access_depth, returned_iris
 
-        # print("subtree:", nodes_visited, "\n", leaf_nodes, "\n", access_depth)
+        hashes = [] 
+        for l in leaf_nodes: 
+            hashes.append(self.tree[l].data.items[0])
 
-        return nodes_visited, leaf_nodes, access_depth
+
+        return nodes_visited, leaf_nodes, access_depth, hashes

@@ -8,10 +8,6 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-import pyoram
-from pyoram.util.misc import MemorySize
-from pyoram.oblivious_storage.tree.path_oram import PathORAM
-
 class node(object): 
     def __init__(self, bloom_filter):
         self.bloom_filter = bloom_filter
@@ -33,7 +29,28 @@ class node(object):
 
     def in_bloomfilter(self, item): 
         str_item = str(item)
-        # print("in bf item:", item)
-        # print("node items:", self.items)
-        # print("tf:", str_item in self.bloom_filter)
         return str_item in self.bloom_filter
+
+
+
+class Iris(object): 
+    def __init__(self, vector, identity): 
+        self.vector = vector
+        self.identity = identity
+
+    def __repr__(self):
+        return "Iris No " + str(self.identity)
+    
+    def print_vector(self): 
+        return str(self.iris)
+
+
+# converts array of bits to iris object
+def to_iris(str_data): 
+    new = [] 
+    for index, i in enumerate(str_data):
+        if type(i) == list: 
+            new.append(Iris(i, index))
+        else: 
+            new.append(i)
+    return new
