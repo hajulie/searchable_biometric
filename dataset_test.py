@@ -95,11 +95,12 @@ def compute_sys_rates(tree, queries):
 
     leaves = tree.subtrees[0].tree.leaves()
     true_pos = 0
+    false_pos = 0
 
     # run queries on whole dataset
     for i in range(len(queries)):
 
-        false_pos = 0
+        # false_pos = 0
         leaves_match = tree.search(queries[i])
 
         print("query = " + str(i))
@@ -111,19 +112,18 @@ def compute_sys_rates(tree, queries):
 
         if int(leaves[i].tag) in res:
             true_pos = true_pos + 1
-            tpr = tpr + 1
             if len(res) > 1:
                 false_pos = false_pos + len(res) - 1
         elif len(res) != 0:
             false_pos = false_pos + len(res)
 
-        fpr = fpr + false_pos/len(leaves)
+        # fpr = fpr + false_pos/len(leaves)
 
     print("# true positives = " + str(true_pos))
-    print("# false positives = " + str(false_pos))
+    print("# false positives per query = " + str(false_pos/len(queries)))
 
-    tpr = tpr/len(queries)
-    fpr = fpr/len(queries)
+    tpr = true_pos/len(queries)
+    fpr = false_pos/(len(leaves) * len(queries))
 
     return tpr, fpr
 
