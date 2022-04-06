@@ -96,8 +96,8 @@ class main_tree(object):
         for sub_tree in self.subtrees: 
             st_nodes, st_leaf, st_access, st_hashes = sub_tree.search(item)
 
-            nodes_visited += st_nodes
-            leaf_nodes += st_leaf
+            nodes_visited += [st_nodes]
+            leaf_nodes += [st_leaf]
             access_depth += access_depth
             
             for i in st_hashes:
