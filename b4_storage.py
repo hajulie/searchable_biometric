@@ -52,7 +52,7 @@ class storage_layer(object):
                     subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
                     
     def put_oram(self): # one oram 
-        self.oram_map = {}
+        self.oram_map = []
 
         if os.path.exists(self.storage_name): 
             os.remove(self.storage_name)
@@ -65,15 +65,17 @@ class storage_layer(object):
 
         add_to = 0
         for (ind, subtree) in enumerate(self.maintree.subtrees): 
+            subtree_oram_map = {}
             node_block_list = self.node_map[ind]
             for node in node_block_list: 
                 for block in node_block_list[node]: 
                     f.write_block(add_to, block)
-                    if node in self.oram_map: 
-                        self.oram_map[node].append(add_to) #keeps track of the associated node and which block it was written into 
+                    if node in subtree_oram_map: 
+                        subtree_oram_map[node] += [add_to] #keeps track of the associated node and which block it was written into 
                     else: 
-                        self.oram_map[node] = [add_to]
+                        subtree_oram_map[node] = [add_to]
                     add_to += 1
+            self.oram_map.append(subtree_oram_map)
 
         self.oram = f 
 

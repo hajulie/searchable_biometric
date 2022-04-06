@@ -50,7 +50,7 @@ class subtree(object):
 
     def get_node_data(self, node):
         #might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
-        print("ITEMS:", self.tree.get_node(node).data.items)
+        # print("ITEMS:", self.tree.get_node(node).data.items)
         return self.tree.get_node(node).data.bloom_filter
 
     #creates a new node: bloom filter with elements from actual_elements
@@ -63,8 +63,6 @@ class subtree(object):
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
         elif elements != None: 
-            print("elements:", elements)
-            print("LEN ELEMENTS:", len(elements))
             bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
             _node_ = node(bf)
             _node_.add_multiple(elements)
