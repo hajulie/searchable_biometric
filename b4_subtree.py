@@ -8,9 +8,9 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-# import pyoram
-# from pyoram.util.misc import MemorySize
-# from pyoram.oblivious_storage.tree.path_oram import PathORAM
+import pyoram
+from pyoram.util.misc import MemorySize
+from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
 from b4_node import node
 
@@ -22,6 +22,7 @@ class subtree(object):
         self.l = len(lsh)
         self.branching_factor = branching_f
         self.error_rate = error_rate
+        self.num_nodes = 0 
         self.max_elem = None
         
         self.tree = None
@@ -31,13 +32,13 @@ class subtree(object):
     #calculate the number of max elements based on the size of the given list 
     def calculate_max_elem(self, num_elements): 
         #leaf nodes are hash output
-        # self.max_elem = self.l * (2**(math.ceil(math.log2(num_elements)))) #l * (2^{ceil(log_2(elements in list))})
         self.max_elem = 2**(math.ceil(math.log2(num_elements)))
 
     #calculate depth of the tree 
     def calculate_depth(self):
         self.depth = math.ceil(math.log(self.max_elem, self.branching_factor))
 
+    #helper func to calculate lsh 
     def calculate_LSH(self, item): 
         res = [] 
         for i, j in enumerate(self.lsh): 
@@ -59,12 +60,15 @@ class subtree(object):
         else:
             return False
 
+    def get_node_data(self, node):
+        #might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
+        return self.tree.get_node(node).data.bloom_filter
+
     #creates a new node: bloom filter with elements from actual_elements
-    #TODO fix list index out of range bug for some dataset sizes (10 for example)
     def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None, leaf=False):
+        self.num_nodes += 1 
         if current_node == "root":
-            # print("elements", elements)
-            #corner case: current_node == "root", parent_node == self.root, 
+            #corner case: current_node == "root", parent_node == self.root,
             bf = BloomFilter(max_elements=(self.l), error_rate=self.error_rate)
             _node_ = node(bf)
             _node_.add_multiple(elements)
