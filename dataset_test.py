@@ -101,7 +101,7 @@ def compute_sys_rates(tree, queries, parallel):
 
         # false_pos = 0
         # TODO fix parallelization
-        leaves_match = tree.search(queries[i], False) # parallel = False for now because parallel search is way slower than expected
+        leaves_match = tree.search(queries[i], parallel) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
         # print("query = " + str(i))
@@ -137,8 +137,8 @@ if __name__ == '__main__':
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
-    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=100)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=12)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     args = parser.parse_args()
