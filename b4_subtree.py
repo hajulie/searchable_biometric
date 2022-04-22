@@ -29,6 +29,47 @@ class subtree(object):
         self.depth = None 
         self.root = branching_f-1
 
+    # @staticmethod
+    # def create_subtree(branching_factor, error_rate, lsh_list, elements):
+    #     total_nodes = 0
+    #     subtrees = []
+    #
+    #     for lsh in lsh_list:
+    #         st = subtree(branching_factor, error_rate, lsh)
+    #         st.build_tree(elements)
+    #         subtrees.append(st)
+    #         total_nodes += st.num_nodes
+    #
+    #     return subtrees, total_nodes
+
+    @staticmethod
+    def create_subtree(branching_factor, error_rate, lsh, elements):
+        st = subtree(branching_factor, error_rate, lsh)
+        st.build_tree(elements)
+        return st
+
+    @staticmethod
+    def search_subtree(st, item):
+        st_nodes, st_leaf, st_access = st.search(item)
+        # return st_nodes
+        # return st_nodes, st_leaf
+        return st_nodes, st_leaf, st_access
+
+    # @staticmethod
+    # def search_subtree(subtrees, item):
+    #     nodes_visited = []
+    #     leaf_nodes = []
+    #     access_depth = []
+    #
+    #     for st in subtrees:
+    #         st_nodes, st_leaf, st_access = st.search(item)
+    #         nodes_visited += st_nodes
+    #         leaf_nodes += st_leaf
+    #         access_depth += access_depth
+    #
+    #     return nodes_visited, leaf_nodes, access_depth
+
+
     #calculate the number of max elements based on the size of the given list 
     def calculate_max_elem(self, num_elements): 
         #leaf nodes are hash output
@@ -45,29 +86,47 @@ class subtree(object):
             res.append(j.hash(item))
         return res
 
-    def get_node_data(node):
+    def compare_LSH(self, hash1, hash2):
+        bits_match = 0
+        for p1, b1 in hash1:
+            for p2, b2 in hash2:
+                if p1 == p2 and b1 != b2:
+                    return False
+                elif p1 == p2 and b1 == b2:
+                    bits_match = bits_match + 1
+                    break
+
+        if bits_match == len(hash1):
+            return True
+        else:
+            return False
+
+    def get_node_data(self, node):
         #might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
         return self.tree.get_node(node).data.bloom_filter
 
     #creates a new node: bloom filter with elements from actual_elements
-    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None): 
+    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None, leaf=False):
         self.num_nodes += 1 
         if current_node == "root":
-            #corner case: current_node == "root", parent_node == self.root, 
+            #corner case: current_node == "root", parent_node == self.root,
             bf = BloomFilter(max_elements=(self.l), error_rate=self.error_rate)
             _node_ = node(bf)
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
-        elif elements != None: 
-            bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
-            _node_ = node(bf)
-            _node_.add_multiple(elements)
+        elif elements != None:
+            if leaf:
+                _node_ = elements
+            else:
+                bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
+                _node_ = node(bf)
+                _node_.add_multiple(elements)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
         else: 
             self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
     
-    def build_tree(self, og_elements): 
-        self.tree = Tree() 
+    def build_tree(self, og_elements):
+        self.tree = Tree()
         num_elements = len(og_elements)
         level = 0 
 
@@ -80,24 +139,26 @@ class subtree(object):
 
         current_node = self.root
         parent_node = self.root-1 #-1 is just for it to work overall
-        
-        while level != self.depth: 
-            level += 1 
+
+        while level != self.depth:
+            level += 1
             nodes_in_level = self.branching_factor**level
             items_in_filter = self.branching_factor**(self.depth-level)
+
             if level == self.depth:
                 for n in range(nodes_in_level):
                     current_node += 1 
                     if current_node % self.branching_factor == 0: 
                         parent_node += 1 
 
-                    if n < self.l:
-                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n])
+                    # if n < self.l:
+                    if n < num_elements:
+                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n], leaf=True)
                     else:
                         self.new_node(current_node, parent_node)
 
-            else: 
-                for n in range(nodes_in_level): 
+            else:
+                for n in range(nodes_in_level):
                     current_node += 1
                     if current_node % self.branching_factor == 0: 
                         parent_node += 1
@@ -139,9 +200,14 @@ class subtree(object):
 
                 for c in children: 
                     child = c.identifier 
-                    access_depth[child_depth].append(child)                    
-                    if self.tree[child].data != None: 
+                    access_depth[child_depth].append(child)
+
+                    if self.tree[child].data != None and child_depth != depth:
                         if self.tree[child].data.in_bloomfilter(current_hash): 
+                            stack.append(child)
+                            break
+                    elif self.tree[child].data != None and child_depth == depth:
+                        if self.compare_LSH(self.tree[child].data, current_hash):
                             stack.append(child)
                             break
             else: 

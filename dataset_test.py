@@ -1,7 +1,22 @@
 from b4_main_tree import main_tree
+import os, glob, numpy
 import random
 import math
 import time
+import argparse
+
+
+def compare_vectors(v1, v2):
+    for i in range(len(v1)):
+        if v1[i] != v2[i]:
+            return False
+    return True
+
+def read_fvector(filePath):
+    with open(filePath) as f:
+        for line in f.readlines():
+            temp_str = numpy.fromstring(line, sep=",")
+            return [int(x) for x in temp_str]
 
 def compute_tree_depth(b, nb_nodes):
     return math.floor(math.log(nb_nodes, b))
@@ -13,97 +28,210 @@ def build_rand_dataset(l, n, t):
     for i in range(l):
         feature = [random.getrandbits(1) for i in range(n)]
         dataset.append(feature)
+        query = dataset[i][:]
 
-        query = dataset[i]
-        for j in range(math.floor(n*t)):
-            b = random.randint(0, n-1)
+        # randomly sample t error bits to be inverted
+        error_bits = random.sample(range(n), math.floor(n*t))
+        for b in error_bits:
             query[b] = (query[b] + 1) % 2
+
         queries.append(query)
 
     return dataset, queries
 
-
 def build_ND_dataset():
-    dataset = []
-    queries = []
-    return dataset, queries
+    cwd = os.getcwd()
+    dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
+    nd_dataset={}
+    class_labels={}
+    i = 0
+    for dir in dir_list:
+        feat_list = glob.glob(dir+"//*")
+        nd_dataset[i] = [read_fvector(x) for x in feat_list]
+        class_labels[i] = dir
+        i = i+1
+
+    nd_templates = [nd_dataset[x][0] for x in nd_dataset]
+    nd_queries = [nd_dataset[x][1] for x in nd_dataset]
+
+    return nd_templates, nd_queries
 
 def build_synthetic_dataset():
     dataset = []
+    labels = []
+
+    cwd = os.getcwd()
+    file_list = glob.glob(cwd + "//datasets//synthetic_dataset//*")
+    for x in file_list:
+        dataset.append(read_fvector(x))
+        labels.append(x[len(x)-9:])
+
+    return dataset
+
+def build_mixed_dataset(data1, queries1, l1, data2, l2):
+    data = []
     queries = []
-    return dataset, queries
+
+    # randomly pick l1 vectors and queries from dataset 1
+    chosen_ones = random.sample(range(len(data1)), l1)
+    for i in chosen_ones:
+        data.append(data1[i])
+        queries.append(queries1[i])
+
+    # randomly pick l2 vectors from dataset 2
+    chosen_ones = random.sample(range(len(data2)), l2)
+    for i in chosen_ones:
+        data.append(data2[i])
+
+    return data, queries
 
 
-def compute_sys_rates(tree, queries):
+# only works if tree leaves order are not randomized !!!!
+def compute_sys_rates(tree, queries, parallel):
     tpr = 0
     fpr = 0
 
     leaves = tree.subtrees[0].tree.leaves()
+    true_pos = 0
+    false_pos = []
+    visited_nodes = []
 
     # run queries on whole dataset
     for i in range(len(queries)):
-        true_pos = 0
-        false_pos = 0
-        res = tree.search(queries[i])
 
-        print("query = " + str(i))
-        print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
-        print(res)
+        # false_pos = 0
+        # TODO fix parallelization
+        leaves_match = tree.search(queries[i], parallel) # parallel = False for now because parallel search is way slower than expected
+        visited_nodes.append(len(leaves_match[0]))
 
-        if int(leaves[i].tag) in res[1]:
+        # print("query = " + str(i))
+        # print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
+        # print(leaves_match)
+
+        # get rid of duplicates in results
+        res = list(set(leaves_match[1]))
+
+        if int(leaves[i].tag) in res:
             true_pos = true_pos + 1
-            if len(res[1]) > 1:
-                false_pos = false_pos + len(res[1]) - 1
-        elif len(res[1]) != 0:
-            false_pos = false_pos + len(res[1])
+            if len(res) > 1:
+                false_pos.append(len(res) - 1)
+        elif len(res) != 0:
+            false_pos.append(len(res))
 
-        tpr = tpr + true_pos
-        fpr = fpr + false_pos/len(leaves)
+        # fpr = fpr + false_pos/len(leaves)
 
-    tpr = tpr/len(queries)
-    fpr = fpr/len(queries)
+    print("True positives = " + str(true_pos))
+    print("False positives: " + str(false_pos))
+    print("Nodes visited: " + str(visited_nodes))
+    print("Avg #false positives per query = " + str(sum(false_pos)/len(queries)))
+    print("Avg #visited nodes per query  = " + str(sum(visited_nodes)/len(queries)))
+
+    tpr = true_pos/len(queries)
+    fpr = sum(false_pos)/(len(leaves) * len(queries))
 
     return tpr, fpr
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
+    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
+    parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
+    args = parser.parse_args()
 
-    l = 356 # dataset size
-    k = 1000 # number of trees to build
+    parallel = bool(args.parallel)
+
+    l = args.dataset_size # dataset size
+    k = args.nb_trees # number of trees to build
     n = 1024 # vector size
 
     branching_factor = 2
     bf_fpr = 0.0001 # Bloom Filter FPR (same for every BFs for now)
-    lsh_size = 12 # LSH output size
-    lsh_r = 307
-    lsh_c = 0.5 * (1024 / 307)
+    lsh_size = args.lsh_size # LSH output size
+    lsh_r = math.floor(args.same_t * n)
+    lsh_c = args.diff_t * (n / lsh_r)
+
 
     # build & search using random dataset
-    random_data, random_queries = build_rand_dataset(l, n, 0.3)
-    random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
-    t_start = time.time()
-    # TODO debug - fail to build tree for l = 5, 6, 9, 10, maybe other values I haven't tested)
-    random_tree.build_index(random_data)
-    t_end = time.time()
+    if args.dataset == "rand" or args.dataset == "all":
+        t_start = time.time()
+        random_data, random_queries = build_rand_dataset(l, n, 0.3)
+        t_end = time.time()
+        t_dataset = t_end - t_start
 
+        random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        t_start = time.time()
+        random_tree.build_index(random_data, parallel)
+        t_end = time.time()
+        t_tree = t_end - t_start
 
+        t_start = time.time()
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
+        t_end = time.time()
+        t_search = t_end - t_start
 
-    # print(len(random_data))
-    # print(len(random_queries))
+        print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(len(random_queries)))
+        print("Random dataset/queries : TPR = " + str(rand_tpr))
+        print("Random dataset/queries : FPR = " + str(rand_fpr))
+        print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
+        print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
+        print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
 
-    (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
-    print("Random dataset/queries : TPR = " + str(rand_tpr) + " - FPR = " + str(rand_fpr))
-    print("build_index takes " + str(t_end - t_start) + " seconds.")
+    # build & search using ND dataset
+    if args.dataset == "nd" or args.dataset == "all":
+        t_start = time.time()
+        ND_data, ND_queries = build_ND_dataset()
+        t_end = time.time()
+        t_dataset = t_end - t_start
 
-    # # build & search using ND dataset
-    # ND_data, ND_queries = build_ND_dataset()
-    # ND_tree = main_tree(branching_factor, bf_fpr, l)
-    # ND_tree.build_index(ND_data)
-    # compute_sys_rates(ND_tree, ND_queries)
-    #
-    # # build & search using synthetic dataset
-    # synthetic_data, synthetic_queries = build_synthetic_dataset()
-    # synthetic_tree = main_tree(branching_factor, bf_fpr, l)
-    # synthetic_tree.build_index(synthetic_data)
-    # compute_sys_rates(synthetic_tree)
+        ND_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        t_start = time.time()
+        ND_tree.build_index(ND_data, parallel)
+        t_end = time.time()
+        t_tree = t_end - t_start
+
+        t_start = time.time()
+        (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries, parallel)
+        t_end = time.time()
+        t_search = t_end - t_start
+
+        print("ND 0405 dataset/queries : Size dataset = " + str(len(ND_data)) + " - size queries = " + str(len(ND_queries)))
+        print("ND 0405 dataset/queries : TPR = " + str(ND_tpr))
+        print("ND 0405 dataset/queries : FPR = " + str(ND_fpr))
+        print("ND 0405 dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
+        print("ND 0405 dataset/queries : build_index takes " + str(t_tree) + " seconds.")
+        print("ND 0405 dataset/queries : search takes " + str(t_search) + " seconds.")
+
+    # build & search with mix of ND and synthetic dataset and queries corresponding to chosen ND vectors
+    if args.dataset == "synth" or args.dataset == "all":
+        # retrieve both synthetic and ND datasets
+        t_start = time.time()
+        synthetic_data = build_synthetic_dataset()
+        ND_data, ND_queries = build_ND_dataset()
+        # build mixed dataset and corresponding queries
+        mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 20, synthetic_data, 336)
+        t_end = time.time()
+        t_dataset = t_end - t_start
+
+        mixed_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        t_start = time.time()
+        mixed_tree.build_index(mixed_data, parallel)
+        t_end = time.time()
+        t_tree = t_end - t_start
+
+        t_start = time.time()
+        (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries, parallel)
+        t_end = time.time()
+        t_search = t_end - t_start
+
+        print("Mixed synthetic & ND dataset/queries : Size dataset = " + str(len(mixed_data)) + " - size queries = " + str(len(mixed_queries)))
+        print("Mixed synthetic & ND dataset/queries : TPR = " + str(mixed_tpr))
+        print("Mixed synthetic & ND dataset/queries : FPR = " + str(mixed_fpr))
+        print("Mixed synthetic & ND dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
+        print("Mixed synthetic & ND dataset/queries : build_index takes " + str(t_tree) + " seconds.")
+        print("Mixed synthetic & ND dataset/queries : search takes " + str(t_search) + " seconds.")
 
