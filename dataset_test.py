@@ -87,7 +87,7 @@ def build_mixed_dataset(data1, queries1, l1, data2, l2):
 
 
 # only works if tree leaves order are not randomized !!!!
-def compute_sys_rates(tree, queries):
+def compute_sys_rates(tree, queries, parallel):
     tpr = 0
     fpr = 0
 
@@ -100,7 +100,8 @@ def compute_sys_rates(tree, queries):
     for i in range(len(queries)):
 
         # false_pos = 0
-        leaves_match = tree.search(queries[i])
+        # TODO fix parallelization
+        leaves_match = tree.search(queries[i], False) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
         # print("query = " + str(i))
@@ -133,13 +134,16 @@ def compute_sys_rates(tree, queries):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
-    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=100)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=12)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     args = parser.parse_args()
+
+    parallel = bool(args.parallel)
 
     l = args.dataset_size # dataset size
     k = args.nb_trees # number of trees to build
@@ -161,12 +165,12 @@ if __name__ == '__main__':
 
         random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        random_tree.build_index(random_data)
+        random_tree.build_index(random_data, parallel)
         t_end = time.time()
         t_tree = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries)
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -186,12 +190,12 @@ if __name__ == '__main__':
 
         ND_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        ND_tree.build_index(ND_data)
+        ND_tree.build_index(ND_data, parallel)
         t_end = time.time()
         t_tree = t_end - t_start
 
         t_start = time.time()
-        (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries)
+        (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -215,12 +219,12 @@ if __name__ == '__main__':
 
         mixed_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        mixed_tree.build_index(mixed_data)
+        mixed_tree.build_index(mixed_data, parallel)
         t_end = time.time()
         t_tree = t_end - t_start
 
         t_start = time.time()
-        (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries)
+        (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
