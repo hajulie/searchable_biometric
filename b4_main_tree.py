@@ -129,7 +129,7 @@ class main_tree(object):
         access_depth = [] #nodes accessed per depth
 
         if parallel:
-            res = Parallel(n_jobs=2 * mp.cpu_count())(delayed(subtree.search_subtree)(st, item)
+            res = Parallel(n_jobs=mp.cpu_count(), prefer="threads")(delayed(subtree.search_subtree)(st, item)
                 for st in self.subtrees)
 
             for st_res in res:
