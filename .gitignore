@@ -3,4 +3,4 @@ venv/
 __pycache__/
 *.csv
 datasets/*
-!datasets/synthetic_dataset
+!datasets/synthetic_dataset.zip
