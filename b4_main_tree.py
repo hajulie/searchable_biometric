@@ -8,8 +8,6 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-# import concurrent.futures
-# from pathos.multiprocessing import ProcessingPool as Pool, cpu_count
 import multiprocessing as mp
 from joblib import Parallel, delayed
 
@@ -80,33 +78,10 @@ class main_tree(object):
         self.lsh = self.eLSH.hashes
         self.compute_eLSH(elements)
 
+        print("Processes: " + str(mp.cpu_count()))
         if parallel:
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(delayed(subtree.create_subtree)(self.branching_factor, self.error_rate, h, elements)
                                            for h in self.lsh)
-
-            # lsh_list_dividers = []
-            # for p in range(processes):
-            #     start = math.ceil(p * self.l / processes)
-            #     end = math.ceil((p + 1) * self.l / processes)
-            #     lsh_list_dividers.append((start, end))
-            #
-            # # for (s, t) in lsh_list_dividers:
-            # #     st_list, nodes = subtree.create_subtree(self.branching_factor, self.error_rate, self.lsh[s:t], elements)
-            # #     self.subtrees += st_list
-            # #     self.total_nodes += nodes
-            #
-            # with Pool(processes) as p:
-            #     with concurrent.futures.ProcessPoolExecutor(processes) as executor:
-            #         future_list = {executor.submit(subtree.create_subtree, self.branching_factor, self.error_rate, self.lsh[start:end], elements)
-            #                        for (start, end) in lsh_list_dividers
-            #                         }
-            #
-            #         for future in concurrent.futures.as_completed(future_list):
-            #             res = future.result()
-            #
-            #             if res is not None:
-            #                 self.subtrees += res[0]
-            #                 self.total_nodes += res[1]
 
         else:
             for h in self.lsh:
@@ -114,12 +89,6 @@ class main_tree(object):
                 self.subtrees.append(st)
                 self.total_nodes += st.num_nodes
 
-        # print(self.subtrees) #print subtrees
-        # for i in self.subtrees: 
-            # print("subtree:", i)
-            # print("show", i.tree)
-
-        # print("Number of subtrees = " + str(len(self.subtrees)))
 
     # TODO parallelize subtree search
     def search(self, item, parallel=False):
@@ -137,40 +106,7 @@ class main_tree(object):
                 leaf_nodes += st_res[1]
                 access_depth += st_res[2]
 
-            # print(results)
-            # cpus = mp.cpu_count()
-            #
-            # subtrees_dividers = []
-            # for p in range(cpus):
-            #     start = math.ceil(p * self.l / cpus)
-            #     end = math.ceil((p + 1) * self.l / cpus)
-            #     subtrees_dividers.append((start, end))
-            #
-            # results = Parallel(n_jobs=2 * cpus)(delayed(subtree.search_subtree)(self.subtrees[start:end], item)
-            #                                               for (start, end) in subtrees_dividers)
-
-            # for (s, t) in subtrees_dividers:
-            #     st_nodes, st_leaves, st_depth = subtree.search_subtree(self.subtrees[s:t], item)
-            #     nodes_visited += st_nodes
-            #     leaf_nodes += st_leaves
-            #     access_depth += st_depth
-
-            # with Pool(processes) as p:
-            #     with concurrent.futures.ProcessPoolExecutor(processes) as executor:
-            #         future_list = {executor.submit(subtree.search_subtree, self.subtrees[start:end], item)
-            #                        for (start, end) in subtrees_dividers
-            #                        }
-            #
-            #         for future in concurrent.futures.as_completed(future_list):
-            #             res = future.result()
-            #
-            #             if res is not None:
-            #                 nodes_visited += res[0]
-            #                 leaf_nodes += res[1]
-            #                 access_depth += res[2]
-
         else:
-            # nodes_visited, leaf_nodes, access_depth = subtree.search_subtree(self.subtrees, item)
             for st in self.subtrees:
                 st_nodes, st_leaf, st_access = subtree.search_subtree(st, item)
                 nodes_visited += st_nodes
