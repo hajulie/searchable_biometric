@@ -4,7 +4,7 @@ import random
 import math
 import time
 import argparse
-
+from b4_node import node
 
 def compare_vectors(v1, v2):
     for i in range(len(v1)):
@@ -39,6 +39,7 @@ def build_rand_dataset(l, n, t):
 
     return dataset, queries
 
+
 def build_ND_dataset():
     cwd = os.getcwd()
     dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
@@ -56,9 +57,12 @@ def build_ND_dataset():
 
     return nd_templates, nd_queries
 
-def build_synthetic_dataset():
+
+def build_synthetic_dataset(l, n, t):
     dataset = []
+    queries = []
     labels = []
+    ctr = 0
 
     cwd = os.getcwd()
     file_list = glob.glob(cwd + "//datasets//synthetic_dataset//*")
@@ -66,24 +70,36 @@ def build_synthetic_dataset():
         dataset.append(read_fvector(x))
         labels.append(x[len(x)-9:])
 
-    return dataset
+        # create query with 30% errors
+        query = read_fvector(x)
+        # randomly sample t error bits to be inverted
+        error_bits = random.sample(range(n), math.floor(n * t))
+        for b in error_bits:
+            query[b] = (query[b] + 1) % 2
+        queries.append(query)
 
-def build_mixed_dataset(data1, queries1, l1, data2, l2):
-    data = []
-    queries = []
+        ctr = ctr +1
+        if ctr > l:
+            break
 
-    # randomly pick l1 vectors and queries from dataset 1
-    chosen_ones = random.sample(range(len(data1)), l1)
-    for i in chosen_ones:
-        data.append(data1[i])
-        queries.append(queries1[i])
+    return dataset, queries
 
-    # randomly pick l2 vectors from dataset 2
-    chosen_ones = random.sample(range(len(data2)), l2)
-    for i in chosen_ones:
-        data.append(data2[i])
-
-    return data, queries
+# def build_mixed_dataset(data1, queries1, l1, data2, l2):
+#     data = []
+#     queries = []
+#
+#     # randomly pick l1 vectors and queries from dataset 1
+#     chosen_ones = random.sample(range(len(data1)), l1)
+#     for i in chosen_ones:
+#         data.append(data1[i])
+#         queries.append(queries1[i])
+#
+#     # randomly pick l2 vectors from dataset 2
+#     chosen_ones = random.sample(range(len(data2)), l2)
+#     for i in chosen_ones:
+#         data.append(data2[i])
+#
+#     return data, queries
 
 
 # only works if tree leaves order are not randomized !!!!
@@ -101,7 +117,7 @@ def compute_sys_rates(tree, queries, parallel):
 
         # false_pos = 0
         # TODO fix parallelization
-        leaves_match = tree.search(queries[i], parallel) # parallel = False for now because parallel search is way slower than expected
+        leaves_match = tree.search(queries[i], False) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
         # print("query = " + str(i))
@@ -135,7 +151,7 @@ def compute_sys_rates(tree, queries, parallel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
-    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
+    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='synth')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
     parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
@@ -148,18 +164,19 @@ if __name__ == '__main__':
     l = args.dataset_size # dataset size
     k = args.nb_trees # number of trees to build
     n = 1024 # vector size
+    t = args.same_t
 
     branching_factor = 2
     bf_fpr = 0.0001 # Bloom Filter FPR (same for every BFs for now)
     lsh_size = args.lsh_size # LSH output size
-    lsh_r = math.floor(args.same_t * n)
+    lsh_r = math.floor(t * n)
     lsh_c = args.diff_t * (n / lsh_r)
 
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
         t_start = time.time()
-        random_data, random_queries = build_rand_dataset(l, n, 0.3)
+        random_data, random_queries = build_rand_dataset(l, n, t)
         t_end = time.time()
         t_dataset = t_end - t_start
 
@@ -170,7 +187,7 @@ if __name__ == '__main__':
         t_tree = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:20], parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -210,28 +227,32 @@ if __name__ == '__main__':
     if args.dataset == "synth" or args.dataset == "all":
         # retrieve both synthetic and ND datasets
         t_start = time.time()
-        synthetic_data = build_synthetic_dataset()
-        ND_data, ND_queries = build_ND_dataset()
+        synthetic_dataset, synthetic_queries = build_synthetic_dataset(l, n, t)
+        # ND_data, ND_queries = build_ND_dataset()
         # build mixed dataset and corresponding queries
-        mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 20, synthetic_data, 336)
+        # mixed_data, mixed_queries = build_mixed_dataset(ND_data, ND_queries, 20, synthetic_data, 336)
         t_end = time.time()
         t_dataset = t_end - t_start
 
-        mixed_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        synth_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        mixed_tree.build_index(mixed_data, parallel)
+        # mixed_tree.build_index(mixed_data, parallel)
+        synth_tree.build_index(synthetic_dataset, parallel)
         t_end = time.time()
         t_tree = t_end - t_start
 
         t_start = time.time()
-        (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries, parallel)
+        # (mixed_tpr, mixed_fpr) = compute_sys_rates(mixed_tree, mixed_queries, parallel)
+        (mixed_tpr, mixed_fpr) = compute_sys_rates(synth_tree, synthetic_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
-        print("Mixed synthetic & ND dataset/queries : Size dataset = " + str(len(mixed_data)) + " - size queries = " + str(len(mixed_queries)))
+        # print("Mixed synthetic & ND dataset/queries : Size dataset = " + str(len(mixed_data)) + " - size queries = " + str(len(mixed_queries)))
+        print("Mixed synthetic & ND dataset/queries : Size dataset = " + str(len(synthetic_dataset)) + " - size queries = " + str(len(synthetic_queries)))
         print("Mixed synthetic & ND dataset/queries : TPR = " + str(mixed_tpr))
         print("Mixed synthetic & ND dataset/queries : FPR = " + str(mixed_fpr))
         print("Mixed synthetic & ND dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("Mixed synthetic & ND dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("Mixed synthetic & ND dataset/queries : search takes " + str(t_search) + " seconds.")
+        # print("Mixed synthetic & ND dataset/queries : BF check takes " + str(node.bf_timing/node.bf_count) + " seconds.")
 
