@@ -75,24 +75,35 @@ def sys_params_to_csv(l, b,  n, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, desired_f
         for s in range(10, 50, 2):
             lsh_tpr_s = pow(lsh_tpr, s)
             lsh_fpr_s = pow(lsh_fpr, s)
+            min_trees=1000000
+            max_trees=0
 
-            for k in range(1000, 50000, 1000):
+            for k in range(1000, 800000, 100):
                 # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
                 (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
-                # print(sys_tpr_s)
-                # print(sys_fpr_s)
+                #print(sys_tpr)
+                #print(sys_fpr)
 
                 # if rates not good enough, discard
                 if sys_tpr > desired_tpr and sys_fpr < desired_fpr:
                     nodes_per_level = nb_nodes_visited_per_level(l, k, b, lsh_tpr_s, lsh_fpr_s)
-                    print(str(s) + "  " + str(k) + "  " + str(nodes_per_level))
+                    #print(str(s) + "  " + str(k) + "  " + str(nodes_per_level))
                     nb_nodes = math.ceil(compute_number_nodes_visited(l, k, b, lsh_tpr_s, lsh_fpr_s, bf_fpr))
-                    print(nb_nodes)
-                    print(k + nodes_per_level[1] * compute_tree_depth(l, b))
+                    #print(nb_nodes)
+                    #print(k + nodes_per_level[1] * compute_tree_depth(l, b))
                     row = (s, k, sys_tpr, sys_fpr, nb_nodes, nodes_per_level)
 
                     # write a row to the csv file
-                    writer.writerow(row)
+                    #writer.writerow(row)
+                    if(k<min_trees):
+                        min_trees=k
+                    if(k>max_trees):
+                        max_trees=k
+            row =("Overall", s, min_trees, max_trees)
+            writer.writerow(row)
+            print(row)
+                
+                    
 
     return filename
 
