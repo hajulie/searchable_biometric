@@ -15,8 +15,9 @@ from pyoram.oblivious_storage.tree.path_oram import PathORAM
 import b4_objs
 from b4_objs import node, Iris, to_iris
 from b4_subtree import subtree
+import b4_oram
 
-# storage_name = "heap.bin"
+storage_name = "heap.bin"
 
 class main_tree(object): 
 
@@ -42,6 +43,8 @@ class main_tree(object):
         self.hash_to_iris = {}
 
         self.total_nodes = 0 
+
+        self.maintree_oram = None
 
     #compute eLSH and returns the list of length l
     def compute_eLSH_one(self, element): 
@@ -107,6 +110,19 @@ class main_tree(object):
             returned_iris.append(self.hash_to_iris[str(h)])
 
         return nodes_visited, leaf_nodes, returned_iris, access_depth
+
+    def apply_oram(self, block_size=256): 
+        self.maintree_oram = b4_oram.storage_layer(self)
+        
+    
+
+    def retrieve_oram(self, list_items): # retrieve list of items from oram 
+        # given a list of nodes, retrieve the items from ORAM
+        pass 
+    
+    def oram_search(self, item): 
+        # search root 
+        # get response from root nodes, retrieve from oram? 
 
 """
 str_data : the data in form of list of strings 

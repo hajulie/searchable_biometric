@@ -31,8 +31,6 @@ class node(object):
         str_item = str(item)
         return str_item in self.bloom_filter
 
-
-
 class Iris(object): 
     def __init__(self, vector, identity): 
         self.vector = vector
@@ -43,7 +41,6 @@ class Iris(object):
     
     def print_vector(self): 
         return str(self.iris)
-
 
 # converts array of bits to iris object
 def to_iris(str_data): 

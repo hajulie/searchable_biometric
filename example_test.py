@@ -1,5 +1,5 @@
 import b4_main_tree
-from b4_storage import *
+from b4_oram import *
 from b4_main_tree import build_db
 
 
@@ -59,6 +59,6 @@ if __name__ == '__main__':
 
     print("\n --------------- TEST ORAM --------------- \n")
 
-    storage_t = apply_storage_layer(t, oram=0)    
+    storage_t = apply_storage_layer(t, oram=2)    
 
 

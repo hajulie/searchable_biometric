@@ -49,7 +49,7 @@ class subtree(object):
         return res
 
     def get_node_data(self, node):
-        #might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
+        # might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
         # print("ITEMS:", self.tree.get_node(node).data.items)
         return self.tree.get_node(node).data.bloom_filter
 
@@ -161,3 +161,5 @@ class subtree(object):
 
 
         return nodes_visited, leaf_nodes, access_depth, hashes
+
+    
