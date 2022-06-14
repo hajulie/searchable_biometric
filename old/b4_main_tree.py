@@ -28,7 +28,6 @@ class main_tree(object):
         # (calculated) tree information
         self.depth = None
         self.root = branching_factor - 1
-        self.total_nodes = 0 
 
         # eLSH information 
         self.eLSH = None
@@ -38,28 +37,39 @@ class main_tree(object):
         self.s = s #samples s bits l times 
         self.l = l
         self.lsh = None
+        self.hash = [ [] for i in range(l) ] #storing each lsh output <-- might change how this happens 
 
-        # trees info 
         self.eyes = []
         self.subtrees = [None for i in range(l)] #keeps track of subtrees 
         self.hash_to_iris = {}
-        
-    def put_elements_map(self, element, output): #puts elements in hash_to_iris  
-        for index, h in enumerate(output):
-            if str(h) in self.hash_to_iris:
-                self.hash_to_iris[str(h)] += [element]
-            else: 
-                self.hash_to_iris[str(h)] = [element]
+
+        self.total_nodes = 0 
+
+        self.maintree_oram = None
 
     #compute eLSH and returns the list of length l
     def compute_eLSH_one(self, element): 
         output = self.eLSH.hash(element.vector) #length of l 
+
+        print("HERE:", output)
+
+        for index, h in enumerate(output):
+            self.hash[index] += [h] 
+            if str(h) in self.hash_to_iris:
+                self.hash_to_iris[str(h)] += [element]
+            else: 
+                self.hash_to_iris[str(h)] = [element]
         return output
 
-    #computes eLSH output of multiple elements F
-    def compute_eLSH(self, elements): 
+    def compute_eLSH(self, elements): #computes the mapping from hash to iris 
         for i in elements: 
             self.compute_eLSH_one(i)
+
+    #creates a new node: bloom filter with elements from actual_elements
+    def new_node(self, num_expected_elements, actual_elements=None): 
+        bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
+        n = node_data(bf)
+        return n
 
     #TREE SPECIFIC FUNCS 
     def build_index(self, elements):
@@ -103,13 +113,15 @@ class main_tree(object):
             returned_iris.append(self.hash_to_iris[str(h)])
 
         return nodes_visited, leaf_nodes, returned_iris, access_depth
+
+    def apply_oram(self, block_size=256): 
+        
+        pass
     
-    """functions for oram search """
-    # checks root of specified subtree 
-    def check_subtree_root(self, subtree_num, item): 
-        return self.subtrees[subtree_num].check_root(item)
-
-
+    def retrieve_oram(self, list_items): # retrieve list of items from oram 
+        # given a list of nodes, retrieve the items from ORAM
+        pass 
+    
     def oram_search(self, item): 
         # search root 
         # get response from root nodes, retrieve from oram? 

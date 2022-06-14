@@ -8,7 +8,7 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-class node(object): 
+class node_data(object): 
     def __init__(self, bloom_filter):
         self.bloom_filter = bloom_filter
         self.items = [] 

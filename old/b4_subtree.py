@@ -29,7 +29,8 @@ class subtree(object):
         self.depth = None 
         self.root = branching_f-1
 
-    # testing funcions 
+
+
     def show_tree(self):
         return self.tree.show()
 
@@ -49,31 +50,10 @@ class subtree(object):
             res.append(j.hash(item))
         return res
 
-    """functions for nodes"""
-    def get_node(self, identifier): 
-        return self.tree.get_node(identifier)
-
     def get_node_data(self, node):
         # might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
         # print("ITEMS:", self.tree.get_node(node).data.items)
         return self.tree.get_node(node).data.bloom_filter
-
-    #returns children of current node 
-    def get_children(self, node): 
-        return self.tree.children(node)
-
-    # checks if item is in the bloomfilter of the node 
-    def check_bf(self, node, element):
-        return self.tree.get_node(node).in_bloomfilter(element)
-
-    # return BLOOM FILTER of root 
-    def return_root(self): 
-        return self.get_node(self.root).data.bloom_filter
-
-    # checks bloom filter if item exists in root 
-    def check_root(self, element): 
-        return self.get_node(self.root).data.in_bloom_filter(element)
-    """END"""
 
     #creates a new node: bloom filter with elements from actual_elements
     def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None): 
@@ -97,9 +77,13 @@ class subtree(object):
         num_elements = len(og_elements)
         level = 0
 
+        # print("b4_subtree og_elements:", og_elements)
+
         self.calculate_max_elem(num_elements) #max number of elements WITH calculation of eLSH outputs 
         self.calculate_depth()
         elements = [self.calculate_LSH(i.vector) for i in og_elements]
+
+        # print("b4subtree 86 elements:", elements)
 
         #initialize root node
         self.new_node("root", self.root, num_elements, elements=elements)
@@ -111,6 +95,7 @@ class subtree(object):
             level += 1 
             nodes_in_level = self.branching_factor**level
             items_in_filter = self.branching_factor**(self.depth-level)
+            # print("b4_subtree self.depth:", self.depth)
             if level == self.depth:
                 for n in range(nodes_in_level):
                     current_node += 1 
@@ -136,6 +121,9 @@ class subtree(object):
                         self.new_node(current_node, parent_node)
                     else: 
                         self.new_node(current_node, parent_node, num_expected_elements=items_in_filter, elements=elements_in_filter)
+
+    def get_leaf_node(self, identifier): 
+        return self.tree.get_node(identifier)
 
     def search(self, item):
         depth = self.tree.depth()

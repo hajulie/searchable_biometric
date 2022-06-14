@@ -3,17 +3,15 @@ import pickle
 import math, os, sys
 
 import pyoram
+from pyoram.util.misc import MemorySize
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
-
-from b4_objs import node_data, Iris, to_iris
 
 storage_name = "heap.bin"
 
-class oblivious_ram(object): 
+class storage_layer(object): 
 
     def __init__(self, maintree, block_size=256):
         self.maintree = maintree
-        self.subtrees = maintree.subtrees
         self.block_size = block_size
         self.node_map = None 
         self.storage_name = storage_name
@@ -26,6 +24,7 @@ class oblivious_ram(object):
             with_padding = item
         else: 
             with_padding = pad(item, self.block_size)
+        
         return with_padding
 
     def create_map(self): 
@@ -56,7 +55,60 @@ class oblivious_ram(object):
                     #TEST WITH PRINT STATEMENT
                     for j in range(len(temp_blocks)):
                         subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
+                    
+    def put_oram(self): # one oram 
+        self.oram_map = []
 
+        if os.path.exists(self.storage_name): 
+            os.remove(self.storage_name)
+
+        #NOTE: the *256 for block_count was a guess, might need to do some thinking to figure out a real number for that 
+        f = PathORAM.setup(self.storage_name, block_size=self.block_size, block_count=self.maintree.total_nodes*256, storage_type='file')
+        f.close() 
+
+        f = PathORAM(self.storage_name, f.stash, f.position_map, key=f.key, storage_type='file')
+
+        add_to = 0
+        for (ind, subtree) in enumerate(self.maintree.subtrees): 
+            subtree_oram_map = {}
+            node_block_list = self.node_map[ind]
+            for node in node_block_list: 
+                for block in node_block_list[node]: 
+                    f.write_block(add_to, block)
+                    if node in subtree_oram_map: 
+                        subtree_oram_map[node] += [add_to] #keeps track of the associated node and which block it was written into 
+                    else: 
+                        subtree_oram_map[node] = [add_to]
+                    add_to += 1
+            self.oram_map.append(subtree_oram_map)
+
+        self.oram = f 
+
+    # this is embarassingly broken and not working, but we're not using this ! 
+    def mul_oram(self): # multiple orams per tree 
+        self.oram_map = []
+
+        for (ind, subtree) in enumerate(self.maintree.subtrees): 
+            if os.path.exists(self.storage_name + str(ind)):
+                os.remove(self.storage_name + str(ind)) 
+
+            f = PathORAM.setup(self.storage_name + str(ind), block_size=self.block_size, block_count=self.maintree.total_nodes*256, storage_type='file')
+            f.close()
+
+            f = PathORAM(self.storage_name, f.stash, f.position_map, key=f.key, storage_type='file')
+
+            add_to = 0 
+            node_block_list = self.node_map[ind]
+
+            for node in node_block_list:
+                for block in node_block_list[node]: 
+                    f.write_block(add_to, block)
+                    if node in self.oram_map: 
+                        self.oram_map[node].append(add_to) #keeps track of the associated node and which block it was written into 
+                    else: 
+                        self.oram_map[node] = [add_to]
+            
+            self.oram_map.append(f)
     
     def depth_oram(self): # oram per level
 
@@ -104,43 +156,11 @@ class oblivious_ram(object):
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
             orig = pickle.load(rebuilt_node)
         return orig 
-
-    def search(self, item): 
-        # um... if we're accessing the tree object anyways then it defeats the purpose of oram? i think this is being implemented wrong 
-        queue = [] 
-        leaf_nodes = [] 
-
-        if type(item) != Iris: 
-            item = to_iris(item)
-        
-        else: 
-            hashes = self.maintree.eLSH.hash(item.vector)
-
-            # check roots first 
-            for (index, item) in enumerate(hashes): 
-                current_subtree = self.subtrees[index]
-                if current_subtree.check_root(item):
-                    lst_children = current_subtree.get_children(current_subtree.root)
-                    for child in lst_children: 
-                        queue.append((index, child))
-            
-            while queue != []: 
-                current_node = queue.pop(0)
-                current_item = hashes[tree]
-                tree, node = current_node[0], current_node[1] 
-                current_tree = self.subtrees[tree]
-
-                original_node = self.retrieve_data(tree, node)
-
-                if current_tree.check_bf(original_node, current_item): 
-                    lst_children = current_tree.get_children()
-                    if lst_children != []: 
-                        for child in lst_children: 
-                            queue.append((tree, child))
-                    else: 
-                        leaf_nodes.append(current_node)
+                
 
 
+    def noroot_oram(self, org): # root node not included in oram 
+        pass
 
     def apply(self, main_tree, block_side=256, type=0): 
         self.create_map()
