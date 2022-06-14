@@ -17,6 +17,7 @@ class storage_layer(object):
         self.storage_name = storage_name
         self.oram_map = None
         self.oram = None
+        self.root = []
 
     def padding(self, item):
         if len(item) == self.block_size:
@@ -33,24 +34,27 @@ class storage_layer(object):
 
         for (index_, subtree) in enumerate(self.maintree.subtrees):
             subtree_map = self.node_map[index_]
-            for node in range(subtree.root+1, subtree.num_nodes): 
-                subtree_map[node] = []
-                current_node_data = subtree.get_node_data(node) 
-                temp = pickle.dumps(current_node_data)
+            for node in range(subtree.root, subtree.num_nodes): 
+                if node == 0: 
+                    self.root.append(node)
+                else: 
+                    subtree_map[node] = []
+                    current_node_data = subtree.get_node_data(node) 
+                    temp = pickle.dumps(current_node_data)
 
-                temp_blocks = [] 
-                num_blocks = len(temp) // self.block_size                
-                
-                for k in range(num_blocks):
-                    block, temp = temp[:self.block_size], temp[self.block_size:]
-                    temp_blocks.append(block)
+                    temp_blocks = [] 
+                    num_blocks = len(temp) // self.block_size                
+                    
+                    for k in range(num_blocks):
+                        block, temp = temp[:self.block_size], temp[self.block_size:]
+                        temp_blocks.append(block)
 
-                padded = self.padding(temp)
-                temp_blocks.append(padded)
+                    padded = self.padding(temp)
+                    temp_blocks.append(padded)
 
-                #TEST WITH PRINT STATEME    NT
-                for j in range(len(temp_blocks)):
-                    subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
+                    #TEST WITH PRINT STATEMENT
+                    for j in range(len(temp_blocks)):
+                        subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
                     
     def put_oram(self): # one oram 
         self.oram_map = []
@@ -80,6 +84,7 @@ class storage_layer(object):
 
         self.oram = f 
 
+    # this is embarassingly broken and not working, but we're not using this ! 
     def mul_oram(self): # multiple orams per tree 
         self.oram_map = []
 
@@ -107,10 +112,10 @@ class storage_layer(object):
     
     def depth_oram(self): # oram per level
 
-        depth = seld.maintree.subtrees[0].depth()
+        depth = self.maintree.subtrees[0].depth()
 
-        self.oram = [] 
-        self.oram_map = {} 
+        self.oram = [None for i in range(depth)] 
+        self.oram_map = [{} for i in range(depth)] 
         add_to = [0 for i in range(depth)] 
 
         for (ind, subtree) in enumerate(self.maintree.subtrees): 
@@ -120,30 +125,46 @@ class storage_layer(object):
 
                 #check if ORAM exists for this depth 
                 #NOTE: the *256 for block_count was a guess, might need to do some thinking to figure out a real number for that 
-                if not os.path.exists(self.storage_name + str(node_depth)): 
+                if self.oram[node_depth] == None: 
                     f = PathORAM.setup(self.storage_name + str(node_depth), block_size=self.block_size, block_count=self.maintree.total_nodes*256, storage_type='file')
-                    self.oram.append(f)
+                    self.oram[node_depth] = (f)
                     f.close() 
-
-                f = PathORAM(self.storage_name + str(node_depth), f.stash, f.position_map, key=f.key, storage_type='file')
+                    f = PathORAM(self.storage_name + str(node_depth), f.stash, f.position_map, key=f.key, storage_type='file')
+                else: 
+                    f = self.oram[node_depth]
 
                 for block in node_block_list[node]: 
                     f.write_block(add_to[node_depth], block)
-                    if str(ind, node) in self.oram_map: 
-                        self.oram_map[str(ind, node)].append(add_to[node_depth])
+                    if node in self.oram_map[ind]: 
+                        self.oram_map[ind][node].append(add_to[node_depth])
                     else: 
                         self.oram_map[str(ind, node)] = [add_to[node_depth]]
                     add_to += 1 
-            pass
+
+
+    def retrieve_data(self, tree, node): 
+        current_oram_map = self.oram_map[tree]
+        current_oram = self.oram[tree]
+        raw_data = [] 
+        if node not in current_oram_map: 
+            print("Value does not exist") #for testing
+        else: 
+            in_map = current_oram_map[node]
+            for pos in in_map:
+                raw_data.append(current_oram.read_block(pos))
+            
+            rebuilt_node = unpad(b''.join(raw_data), self.block_size)
+            orig = pickle.load(rebuilt_node)
+        return orig 
+                
+
 
     def noroot_oram(self, org): # root node not included in oram 
         pass
 
-    def rebuild_node(self, node): 
-        raw_data = []
-        in_map = self.map[node]
-
-
+    def apply(self, main_tree, block_side=256, type=0): 
+        self.create_map()
+        self.depth_oram()
 # apply_storage_layer : splits the nodes of the trees into blocks (serialized, then split into blocks)
 # oram types: 
 # 0 = entire tree into 1 oram 

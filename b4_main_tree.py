@@ -112,10 +112,9 @@ class main_tree(object):
         return nodes_visited, leaf_nodes, returned_iris, access_depth
 
     def apply_oram(self, block_size=256): 
-        self.maintree_oram = b4_oram.storage_layer(self)
         
+        pass
     
-
     def retrieve_oram(self, list_items): # retrieve list of items from oram 
         # given a list of nodes, retrieve the items from ORAM
         pass 
@@ -123,6 +122,41 @@ class main_tree(object):
     def oram_search(self, item): 
         # search root 
         # get response from root nodes, retrieve from oram? 
+        # rebuild the node, read the node
+        # if node has data, then add children to the list of nodes to retrieve from oram 
+        # if node doesn't have data, then just keep reading until stack is done. 
+
+        queue = [] 
+        leaf_nodes = [] 
+
+        hashes = self.eLSH.hash(item.vector)
+
+        for (index, item) in enumerate(hashes): 
+            current_hash = self.lsh[index]
+            current_tree = self.subtrees[index].tree
+
+            # i REALLY don't think this is right 
+            for root_node in self.maintree_oram.root: 
+                if root_node.data.in_bloomfilter(item): 
+                    lst_children = append(current_tree.root_node)
+                    for child in lst_children:
+                        queue.append((index, child))
+
+        while queue != []: 
+            current = queue.pop(0)
+            tree, node = current[0], current[1]
+            current_item = hashes[tree]
+            current_tree = self.subtrees[tree].tree
+            original_node = self.maintree_oram.retrieve_data(tree, node)
+
+            if original_node.in_bloomfilter(current_item): 
+                if children != []: 
+                    lst_children = append(current_tree.original_node)
+                    for child in lst_children:
+                        queue.append((tree, child))
+                else: 
+                    leaf_nodes.append(current)
+        
 
 """
 str_data : the data in form of list of strings 

@@ -31,6 +31,7 @@ class node(object):
         str_item = str(item)
         return str_item in self.bloom_filter
 
+
 class Iris(object): 
     def __init__(self, vector, identity): 
         self.vector = vector
