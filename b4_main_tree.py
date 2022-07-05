@@ -30,6 +30,7 @@ class main_tree(object):
 
         self.depth = None
         self.root = branching_factor - 1
+        self.root_nodes = []
 
         self.eLSH = None
         self.n = n
@@ -44,10 +45,25 @@ class main_tree(object):
         self.subtrees = []
         self.hash_to_iris = {}
 
-        self.total_nodes = 0 
+        self.total_nodes = 0
+
+    def search_root_nodes(self, query):
+        root_matches = []
+        for r in range(len(self.root_nodes)):
+            query_lsh = []
+
+            # compute LSH on query
+            for i, j in enumerate(self.root_nodes[r][1]):
+                query_lsh.append(j.hash(query))
+
+            # if query in root BF add subtree to list
+            # self.tree[self.root].data.in_bloomfilter(current_hash)
+            if self.root_nodes[r][0].in_bloomfilter(query_lsh) == True:
+                root_matches.append(r)
+
+        return root_matches
 
     #compute eLSH and returns the list of length l
-
     def compute_eLSH_one(self, element):
         output = self.eLSH.hash(element) #length of l 
 
@@ -82,15 +98,18 @@ class main_tree(object):
         if parallel:
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(delayed(subtree.create_subtree)(self.branching_factor, self.error_rate, h, elements)
                                            for h in self.lsh)
+            for st in self.subtrees:
+                self.root_nodes.append((st.get_root_node(), st.lsh))
 
         else:
             for h in self.lsh:
                 st = subtree.create_subtree(self.branching_factor, self.error_rate, h, elements)
                 self.subtrees.append(st)
                 self.total_nodes += st.num_nodes
+                self.root_nodes.append(st.get_root_node(), h)
 
 
-    # TODO parallelize subtree search
+
     def search(self, item, parallel=False):
         nodes_visited = [] 
         leaf_nodes = [] 

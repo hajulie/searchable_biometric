@@ -114,15 +114,14 @@ def compute_sys_rates(tree, queries, parallel):
 
     # run queries on whole dataset
     for i in range(len(queries)):
-
         # false_pos = 0
-        # TODO fix parallelization
+
         leaves_match = tree.search(queries[i], False) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
-        # print("query = " + str(i))
-        # print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
-        # print(leaves_match)
+        print("query = " + str(i))
+        print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
+        print(leaves_match)
 
         # get rid of duplicates in results
         res = list(set(leaves_match[1]))
@@ -151,7 +150,7 @@ def compute_sys_rates(tree, queries, parallel):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
-    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='synth')
+    parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
     parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
@@ -186,6 +185,9 @@ if __name__ == '__main__':
         t_end = time.time()
         t_tree = t_end - t_start
 
+        print("Root nodes lists:")
+        print(random_tree.search_root_nodes(random_queries[0]))
+
         t_start = time.time()
         (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:20], parallel)
         t_end = time.time()
@@ -210,6 +212,11 @@ if __name__ == '__main__':
         ND_tree.build_index(ND_data, parallel)
         t_end = time.time()
         t_tree = t_end - t_start
+
+        print("Root nodes lists:")
+        print(ND_tree.search_root_nodes(ND_queries[0]))
+        # for q in synthetic_queries:
+        #     print(synth_tree.search_root_nodes(q))
 
         t_start = time.time()
         (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries, parallel)

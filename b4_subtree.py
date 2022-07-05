@@ -29,19 +29,6 @@ class subtree(object):
         self.depth = None 
         self.root = branching_f-1
 
-    # @staticmethod
-    # def create_subtree(branching_factor, error_rate, lsh_list, elements):
-    #     total_nodes = 0
-    #     subtrees = []
-    #
-    #     for lsh in lsh_list:
-    #         st = subtree(branching_factor, error_rate, lsh)
-    #         st.build_tree(elements)
-    #         subtrees.append(st)
-    #         total_nodes += st.num_nodes
-    #
-    #     return subtrees, total_nodes
-
     @staticmethod
     def create_subtree(branching_factor, error_rate, lsh, elements):
         st = subtree(branching_factor, error_rate, lsh)
@@ -51,24 +38,7 @@ class subtree(object):
     @staticmethod
     def search_subtree(st, item):
         st_nodes, st_leaf, st_access = st.search(item)
-        # return st_nodes
-        # return st_nodes, st_leaf
         return st_nodes, st_leaf, st_access
-
-    # @staticmethod
-    # def search_subtree(subtrees, item):
-    #     nodes_visited = []
-    #     leaf_nodes = []
-    #     access_depth = []
-    #
-    #     for st in subtrees:
-    #         st_nodes, st_leaf, st_access = st.search(item)
-    #         nodes_visited += st_nodes
-    #         leaf_nodes += st_leaf
-    #         access_depth += access_depth
-    #
-    #     return nodes_visited, leaf_nodes, access_depth
-
 
     #calculate the number of max elements based on the size of the given list 
     def calculate_max_elem(self, num_elements): 
@@ -175,6 +145,9 @@ class subtree(object):
     def get_leaf_node(self, identifier): 
         return self.tree.get_node(identifier)
 
+    def get_root_node(self):
+        return self.tree[self.root].data
+
     def search(self, item):
         depth = self.tree.depth()
         stack = [] 
@@ -187,7 +160,8 @@ class subtree(object):
         access_depth[0].append(self.root)
         current_hash = self.calculate_LSH(item)
         # print("subtree search hash:", current_hash)
-        if root_bf.in_bloomfilter(current_hash): 
+
+        if root_bf.in_bloomfilter(current_hash):
             stack.append(self.root)
 
         while stack != []: 
