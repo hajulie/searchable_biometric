@@ -59,6 +59,17 @@ if __name__ == '__main__':
 
     print("\n --------------- TEST ORAM --------------- \n")
 
-    storage_t = apply_storage_layer(t, oram=2)    
+    storage_t = oblivious_ram()
+    storage_t.apply(t)
+
+    try_search = random.randint(0,n-1)
+    attempt = try_data[try_search]
+    
+    print("\n- Search for Iris %i, No noise - \n" % try_search) # searching with no noise 
+    s = storage_t.search(attempt)
+    
+    print("Matched Leaf Nodes:", s[0])
+    # print("Matched leaf nodes:", s[1])
+    # print("Matched Irises:", s[2])
 
 

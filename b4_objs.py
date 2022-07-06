@@ -12,6 +12,7 @@ class node_data(object):
     def __init__(self, bloom_filter):
         self.bloom_filter = bloom_filter
         self.items = [] 
+        self.children = []
     
     def add_item(self, item): 
         self.bloom_filter.add(str(item))
@@ -26,6 +27,13 @@ class node_data(object):
         else: 
             # print("add:", items)
             self.add_item(items)
+    
+    def add_child(self, child): 
+        # child is node identifier number 
+        self.children.append(child)
+    
+    def get_childre(self):
+        return self.children
 
     def in_bloomfilter(self, item): 
         str_item = str(item)

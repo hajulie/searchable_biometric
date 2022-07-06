@@ -54,6 +54,7 @@ class main_tree(object):
     #compute eLSH and returns the list of length l
     def compute_eLSH_one(self, element): 
         output = self.eLSH.hash(element.vector) #length of l 
+        self.put_elements_map(element, output)
         return output
 
     #computes eLSH output of multiple elements F
@@ -74,7 +75,7 @@ class main_tree(object):
         self.compute_eLSH(self.eyes)
 
         for h in range(self.l): 
-            st = subtree(self.branching_factor, self.error_rate, self.lsh[h])
+            st = subtree(h, self.branching_factor, self.error_rate, self.lsh[h])
             st.build_tree( self.eyes )
             self.subtrees[h] = st 
             self.total_nodes += st.num_nodes
@@ -99,6 +100,7 @@ class main_tree(object):
             for i in st_hashes:
                 returned_hashes.append(i)
 
+        print("here h ", self.hash_to_iris)
         for h in returned_hashes:
             returned_iris.append(self.hash_to_iris[str(h)])
 
@@ -109,45 +111,9 @@ class main_tree(object):
     def check_subtree_root(self, subtree_num, item): 
         return self.subtrees[subtree_num].check_root(item)
 
-
-    def oram_search(self, item): 
-        # search root 
-        # get response from root nodes, retrieve from oram? 
-        # rebuild the node, read the node
-        # if node has data, then add children to the list of nodes to retrieve from oram 
-        # if node doesn't have data, then just keep reading until stack is done. 
-
-        queue = [] 
-        leaf_nodes = [] 
-
-        hashes = self.eLSH.hash(item.vector)
-
-        for (index, item) in enumerate(hashes): 
-            current_hash = self.lsh[index]
-            current_tree = self.subtrees[index].tree
-
-            # i REALLY don't think this is right 
-            for root_node in self.maintree_oram.root: 
-                if root_node.data.in_bloomfilter(item): 
-                    lst_children = append(current_tree.root_node)
-                    for child in lst_children:
-                        queue.append((index, child))
-
-        while queue != []: 
-            current = queue.pop(0)
-            tree, node = current[0], current[1]
-            current_item = hashes[tree]
-            current_tree = self.subtrees[tree].tree
-            original_node = self.maintree_oram.retrieve_data(tree, node)
-
-            if original_node.in_bloomfilter(current_item): 
-                if children != []: 
-                    lst_children = append(current_tree.original_node)
-                    for child in lst_children:
-                        queue.append((tree, child))
-                else: 
-                    leaf_nodes.append(current)
-        
+    # returns a node based on tree identifier specifcation 
+    def return_tree_node(self, subtree_num, node): 
+        return self.subtrees[subtree_num].get_node(node) 
 
 """
 str_data : the data in form of list of strings 
@@ -158,6 +124,8 @@ def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5*(1
 
     t = main_tree(_branching_factor, _false_pos, n=n, r=r, c=c, s=s, l=l)
     t.build_index(data)
+
+    print(t.subtrees[0].get_node(1))
     
     return t, data
 

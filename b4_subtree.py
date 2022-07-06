@@ -17,7 +17,8 @@ from b4_objs import node_data, Iris, to_iris
 storage_name = "heap.bin"
 
 class subtree(object):
-    def __init__(self, branching_f, error_rate, lsh):
+    def __init__(self, identifier, branching_f, error_rate, lsh):
+        self.identifier = identifier
         self.lsh = lsh
         self.l = len(lsh)
         self.branching_factor = branching_f
@@ -56,8 +57,12 @@ class subtree(object):
     def get_node_data(self, node):
         # might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
         # print("ITEMS:", self.tree.get_node(node).data.items)
-        return self.tree.get_node(node).data.bloom_filter
+        return self.tree.get_node(node).data
 
+    def add_child(self, parent_node, child): 
+        node_type = self.tree.get_node(parent_node).data
+        node_type.add_child(child)
+    
     #returns children of current node 
     def get_children(self, node): 
         return self.tree.children(node)
@@ -73,6 +78,13 @@ class subtree(object):
     # checks bloom filter if item exists in root 
     def check_root(self, element): 
         return self.get_node(self.root).data.in_bloom_filter(element)
+
+    #get depth of tree 
+    def get_depth(self, node=None):
+        if node == None: 
+            return self.depth
+        else: 
+            return self.tree.depth(node)
     """END"""
 
     #creates a new node: bloom filter with elements from actual_elements
@@ -88,8 +100,10 @@ class subtree(object):
             bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
             _node_ = node_data(bf)
             _node_.add_multiple(elements)
+            self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
         else: 
+            self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
     
     def build_tree(self, og_elements): 
