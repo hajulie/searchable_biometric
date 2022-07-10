@@ -22,7 +22,6 @@ class node_data(object):
         # print("add mul items:", items)
         if type(items[0]) == list:
             for i in items:
-                # print("add:", i)
                 self.add_item(i) 
         else: 
             # print("add:", items)
@@ -32,7 +31,7 @@ class node_data(object):
         # child is node identifier number 
         self.children.append(child)
     
-    def get_childre(self):
+    def get_children(self):
         return self.children
 
     def in_bloomfilter(self, item): 

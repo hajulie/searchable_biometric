@@ -30,6 +30,8 @@ class subtree(object):
         self.depth = None 
         self.root = branching_f-1
 
+        self.levels = {}
+
     # testing funcions 
     def show_tree(self):
         return self.tree.show()
@@ -77,9 +79,9 @@ class subtree(object):
 
     # checks bloom filter if item exists in root 
     def check_root(self, element): 
-        return self.get_node(self.root).data.in_bloom_filter(element)
+        return self.get_node(self.root).data.in_bloomfilter(element)
 
-    #get depth of tree 
+    #get depth of tree or node 
     def get_depth(self, node=None):
         if node == None: 
             return self.depth
