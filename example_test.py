@@ -65,10 +65,11 @@ if __name__ == '__main__':
     try_search = random.randint(0,n-1)
     attempt = try_data[try_search]
     
-    print("\n- Search for Iris %i, No noise - \n" % try_search) # searching with no noise 
+    print("\n- Search for Iris %i, No noise - \n" % try_search) # searching with no noise  s
     s = storage_t.search(attempt)
     
-    print("Matched Leaf Nodes:", s[0])
+    print(s)
+    # print("Matched Leaf Nodes:", s[0])
     # print("Matched leaf nodes:", s[1])
     # print("Matched Irises:", s[2])
 

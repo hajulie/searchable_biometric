@@ -64,6 +64,7 @@ class main_tree(object):
 
     #TREE SPECIFIC FUNCS 
     def build_index(self, elements):
+        print(elements)
         num_elements = len(elements)
         level = 0 #levels increase going down 
 

@@ -13,8 +13,8 @@ ext = ".bin"
 class oblivious_ram(object): 
 
     def __init__(self):
-        self.maintree = None
-        self.subtrees = None
+        self.maintree = None 
+        self.subtrees = None 
         self.block_size = None
         self.node_map = None 
         self.storage_name = storage_name
@@ -78,12 +78,13 @@ class oblivious_ram(object):
                     current_file_name = self.storage_name + str(node_depth) 
                     if os.path.exists(current_file_name):
                         os.remove(current_file_name)
-                    f = PathORAM.setup(self.storage_name + str(node_depth), block_size=self.block_size, block_count=self.maintree.total_nodes*256, storage_type='file')
-                    self.oram[node_depth] = (f)
-                    f.close() 
-                    f = PathORAM(self.storage_name + str(node_depth), f.stash, f.position_map, key=f.key, storage_type='file')
+                    current = PathORAM.setup(self.storage_name + str(node_depth), block_size=self.block_size, block_count=self.maintree.total_nodes*256, storage_type='file')
+                    self.oram[node_depth] = (current)
+                    current.close() 
+                    f = PathORAM(self.storage_name + str(node_depth), current.stash, current.position_map, key=current.key, storage_type='file')
                 else: 
-                    f = self.oram[node_depth]
+                    current = self.oram[node_depth]
+                    f = PathORAM(self.storage_name + str(node_depth), current.stash, current.position_map, key=current.key, storage_type='file')
 
                 for block in node_block_list[node]: 
                     f.write_block(add_to[node_depth], block)
@@ -92,20 +93,31 @@ class oblivious_ram(object):
                     else: 
                         self.oram_map[ind][node] = [add_to[node_depth]]
                     add_to[node_depth] += 1 
+                f.close()
 
-    def retrieve_data(self, tree, node): 
+    def retrieve_data(self, tree, depth, node): 
+        #print("tree, depth, node", tree, depth, node)
+        #print("node", node)
         current_oram_map = self.oram_map[tree]
-        current_oram = self.oram[tree]
+        #print("wtf", current_oram_map)
+        current_oram = self.oram[depth]
+        current_oram_file = PathORAM(self.storage_name + str(depth), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
+        #print("tree", self.oram)
+        #print("wtf", depth)
+        #print("current_oram", current_oram)
         raw_data = [] 
         if node not in current_oram_map: 
             print("Value does not exist") #for testing
         else: 
             in_map = current_oram_map[node]
             for pos in in_map:
-                raw_data.append(current_oram.read_block(pos))
+                #print("pos", pos)
+                #print("raw data", raw_data)
+                raw_data.append(current_oram_file.read_block(pos))
             
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
-            orig = pickle.load(rebuilt_node)
+            orig = pickle.loads(rebuilt_node)
+        current_oram_file.close()
         return orig 
 
     # def search(self, item): 
@@ -149,39 +161,51 @@ class oblivious_ram(object):
     def search(self, item): 
         queue = []
         leaf_nodes = []
+        next_level_queue = [] 
+        current_level = 1 #hard coded for now
 
         if type(item) != Iris: 
-            item = to_iris(item)
+            item = to_iris([item])
+        hashes = self.maintree.eLSH.hash(item[0].vector)
+
+        # check roots first 
+        for (index, item) in enumerate(hashes): 
+            current_subtree = self.subtrees[index]
+
+            if current_subtree.check_root(item):
+                lst_children = current_subtree.get_children(current_subtree.root)
+                for child in lst_children: 
+                    queue.append((index, child.identifier))
         
-        else: 
-            hashes = self.maintree.eLSH.hash(item.vector)
+        while queue != []: 
+            #print("queue", queue)
+            current_node = queue.pop(0)
+            #print("currentnode", current_node)
+            tree, node = current_node[0], current_node[1] 
+            current_item = hashes[tree]
+            current_tree = self.subtrees[tree]
 
-            # check roots first 
-            for (index, item) in enumerate(hashes): 
-                current_subtree = self.subtrees[index]
+            #print("current_node", current_node)
+            original_node_data = self.retrieve_data(tree, current_level, node)
+            # #print(original_node_data)
 
-                if current_subtree.check_root(item):
-                    lst_children = current_subtree.get_children(current_subtree.root)
-                    for child in lst_children: 
-                        queue.append((index, child))
+            if original_node_data.in_bloomfilter(current_item):
+                #print("original_node_data", original_node_data)
+                lst_children = original_node_data.get_children()
+
+                if lst_children != []: 
+                    for child in lst_children:
+                        #print("child", child)
+                        #print("child.identifier", child.identifier)
+                        next_level_queue.append((tree, child.identifier))
+                
+                else: 
+                    leaf_nodes.append(current_node)
             
-            while queue != []: 
-                current_node = queue.pop(0)
-                current_item = hashes[tree]
-                tree, node = current_node[0], current_node[1] 
-                current_tree = self.subtrees[tree]
-
-                original_node_data = self.retrieve_data(tree, node)
-
-                if original_node_data.in_bloomfilter(current_item):
-                    lst_children = original_node_data.get_children()
-
-                    if lst_children != []: 
-                        for child in lst_children:
-                            queue.append((tree, child))
-                    
-                    else: 
-                        leaf_nodes.append(current_node)
+            if queue == []: 
+                queue = next_level_queue
+                next_level_queue = []
+                current_level += 1 
 
         return leaf_nodes
 
