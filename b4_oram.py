@@ -21,6 +21,11 @@ class oblivious_ram(object):
         self.oram_map = None
         self.oram = None
         self.root = []
+        self.leaf_nodes = None
+
+    def check_hash_to_iris(self, h): 
+        current_map = self.maintree.hash_to_iris
+        return current_map[str(h)]
 
     def padding(self, item):
         if len(item) == self.block_size:
@@ -33,6 +38,7 @@ class oblivious_ram(object):
         # init map 
         # self.node_map[tree][node]
         self.node_map = [ {} for i in range(self.maintree.l)]
+        self.leaf_nodes = [{} for i in range(self.maintree.l)]
 
         for (index_, subtree) in enumerate(self.maintree.subtrees):
             subtree_map = self.node_map[index_]
@@ -57,7 +63,6 @@ class oblivious_ram(object):
                     #TEST WITH PRINT STATEMENT
                     for j in range(len(temp_blocks)):
                         subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
-
     
     def depth_oram(self): # oram per level
 
@@ -96,23 +101,15 @@ class oblivious_ram(object):
                 f.close()
 
     def retrieve_data(self, tree, depth, node): 
-        #print("tree, depth, node", tree, depth, node)
-        #print("node", node)
         current_oram_map = self.oram_map[tree]
-        #print("wtf", current_oram_map)
         current_oram = self.oram[depth]
         current_oram_file = PathORAM(self.storage_name + str(depth), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
-        #print("tree", self.oram)
-        #print("wtf", depth)
-        #print("current_oram", current_oram)
         raw_data = [] 
         if node not in current_oram_map: 
             print("Value does not exist") #for testing
         else: 
             in_map = current_oram_map[node]
             for pos in in_map:
-                #print("pos", pos)
-                #print("raw data", raw_data)
                 raw_data.append(current_oram_file.read_block(pos))
             
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
@@ -120,49 +117,16 @@ class oblivious_ram(object):
         current_oram_file.close()
         return orig 
 
-    # def search(self, item): 
-    #     # um... if we're accessing the tree object anyways then it defeats the purpose of oram? i think this is being implemented wrong 
-    #     queue = [] 
-    #     leaf_nodes = [] 
-
-    #     if type(item) != Iris: 
-    #         item = to_iris(item)
-        
-    #     else: 
-    #         hashes = self.maintree.eLSH.hash(item.vector)
-
-    #         # check roots first 
-    #         for (index, item) in enumerate(hashes): 
-    #             current_subtree = self.subtrees[index]
-    #             if current_subtree.check_root(item):
-    #                 lst_children = current_subtree.get_children(current_subtree.root)
-    #                 for child in lst_children: 
-    #                     queue.append((index, child))
-            
-    #         while queue != []: 
-    #             current_node = queue.pop(0)
-    #             current_item = hashes[tree]
-    #             tree, node = current_node[0], current_node[1] 
-    #             current_tree = self.subtrees[tree]
-
-    #             original_node = self.retrieve_data(tree, node)
-
-    #             if current_tree.check_bf(original_node, current_item): 
-    #                 lst_children = current_tree.get_children()
-    #                 if lst_children != []: 
-    #                     for child in lst_children: 
-    #                         queue.append((tree, child))
-    #                 else: 
-    #                     leaf_nodes.append(current_node)
-        
-    #     return leaf_nodes
-
     # if things in tree are node_data not actual nodes 
     def search(self, item): 
         queue = []
-        leaf_nodes = []
         next_level_queue = [] 
         current_level = 1 #hard coded for now
+
+        leaf_nodes = []
+        hashes = []
+        lookup = []
+        
 
         if type(item) != Iris: 
             item = to_iris([item])
@@ -178,28 +142,22 @@ class oblivious_ram(object):
                     queue.append((index, child.identifier))
         
         while queue != []: 
-            #print("queue", queue)
             current_node = queue.pop(0)
-            #print("currentnode", current_node)
             tree, node = current_node[0], current_node[1] 
             current_item = hashes[tree]
             current_tree = self.subtrees[tree]
 
-            #print("current_node", current_node)
             original_node_data = self.retrieve_data(tree, current_level, node)
-            # #print(original_node_data)
 
             if original_node_data.in_bloomfilter(current_item):
-                #print("original_node_data", original_node_data)
                 lst_children = original_node_data.get_children()
 
                 if lst_children != []: 
                     for child in lst_children:
-                        #print("child", child)
-                        #print("child.identifier", child.identifier)
                         next_level_queue.append((tree, child.identifier))
                 
                 else: 
+                    hashes.append(item)
                     leaf_nodes.append(current_node)
             
             if queue == []: 
@@ -207,7 +165,12 @@ class oblivious_ram(object):
                 next_level_queue = []
                 current_level += 1 
 
-        return leaf_nodes
+        irises = []
+        for i in hashes: 
+            returned_irises = self.check_hash_to_iris(i)
+            irises.append(returned_irises)
+
+        return irises, leaf_nodes
 
 
     def apply(self, main_tree, block_size=256): 

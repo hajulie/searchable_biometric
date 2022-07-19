@@ -64,7 +64,6 @@ class main_tree(object):
 
     #TREE SPECIFIC FUNCS 
     def build_index(self, elements):
-        print(elements)
         num_elements = len(elements)
         level = 0 #levels increase going down 
 
@@ -101,7 +100,7 @@ class main_tree(object):
             for i in st_hashes:
                 returned_hashes.append(i)
 
-        print("here h ", self.hash_to_iris)
+        # print("here h ", self.hash_to_iris)
         for h in returned_hashes:
             returned_iris.append(self.hash_to_iris[str(h)])
 
@@ -126,7 +125,5 @@ def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5*(1
     t = main_tree(_branching_factor, _false_pos, n=n, r=r, c=c, s=s, l=l)
     t.build_index(data)
 
-    print(t.subtrees[0].get_node(1))
-    
     return t, data
 

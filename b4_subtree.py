@@ -58,8 +58,10 @@ class subtree(object):
 
     def get_node_data(self, node):
         # might need to change this later, specifying bloom_filter bc current node object has plaintext and bloom filer 
-        # print("ITEMS:", self.tree.get_node(node).data.items)
         return self.tree.get_node(node).data
+
+    def get_node_items(self, node): 
+        return self.get_node(node).data.items
 
     def add_child(self, parent_node, child): 
         node_type = self.tree.get_node(parent_node).data
@@ -77,6 +79,9 @@ class subtree(object):
     def return_root(self): 
         return self.get_node(self.root).data.bloom_filter
 
+    def return_root_data(self): 
+        return self.get_node(self.root).data
+
     # checks bloom filter if item exists in root 
     def check_root(self, element): 
         return self.get_node(self.root).data.in_bloomfilter(element)
@@ -87,6 +92,9 @@ class subtree(object):
             return self.depth
         else: 
             return self.tree.depth(node)
+
+    def check_leaf(self, node):
+        return self.get_node(node).is_leaf()
     """END"""
 
     #creates a new node: bloom filter with elements from actual_elements
@@ -188,7 +196,6 @@ class subtree(object):
         hashes = [] 
         for l in leaf_nodes: 
             hashes.append(self.tree[l].data.items[0])
-
 
         return nodes_visited, leaf_nodes, access_depth, hashes
 

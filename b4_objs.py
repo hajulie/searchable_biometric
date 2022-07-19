@@ -13,18 +13,17 @@ class node_data(object):
         self.bloom_filter = bloom_filter
         self.items = [] 
         self.children = []
+        self.irises = []
     
     def add_item(self, item): 
         self.bloom_filter.add(str(item))
         self.items.append(item)
 
     def add_multiple(self, items): 
-        # print("add mul items:", items)
         if type(items[0]) == list:
             for i in items:
                 self.add_item(i) 
         else: 
-            # print("add:", items)
             self.add_item(items)
     
     def add_child(self, child): 
@@ -37,6 +36,9 @@ class node_data(object):
     def in_bloomfilter(self, item): 
         str_item = str(item)
         return str_item in self.bloom_filter
+    
+    def add_iris(self, iris): 
+        self.irises.append(iris)
 
 
 class Iris(object): 
