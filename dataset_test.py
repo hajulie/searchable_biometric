@@ -185,8 +185,8 @@ if __name__ == '__main__':
         t_end = time.time()
         t_tree = t_end - t_start
 
-        print("Root nodes lists:")
-        print(random_tree.search_root_nodes(random_queries[0]))
+        # print("Root nodes lists:")
+        # print(random_tree.search_root_nodes(random_queries[0]))
 
         t_start = time.time()
         (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:20], parallel)
@@ -213,8 +213,8 @@ if __name__ == '__main__':
         t_end = time.time()
         t_tree = t_end - t_start
 
-        print("Root nodes lists:")
-        print(ND_tree.search_root_nodes(ND_queries[0]))
+        # print("Root nodes lists:")
+        # print(ND_tree.search_root_nodes(ND_queries[0]))
         # for q in synthetic_queries:
         #     print(synth_tree.search_root_nodes(q))
 
