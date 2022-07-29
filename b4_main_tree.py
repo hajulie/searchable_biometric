@@ -1,5 +1,3 @@
-#bloom4, each tree is a lsh 
-
 from bloom_filter2 import BloomFilter
 from treelib import Node, Tree
 import math, os, sys
@@ -8,173 +6,128 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-import multiprocessing as mp
-from joblib import Parallel, delayed
-
 import pyoram
 from pyoram.util.misc import MemorySize
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
-from b4_node import node
+import b4_objs
+from b4_objs import node_data, Iris, to_iris
 from b4_subtree import subtree
-from b4_iris import iris
+import b4_oram
 
-# storage_name = "heap.bin"
+storage_name = "heap.bin"
 
-class main_tree(object): 
 
-    def __init__(self, branching_factor, error_rate, n=1024, r=307, c=0.5*(1024/307), s=12, l=1000): 
+class main_tree(object):
+
+    def __init__(self, branching_factor, error_rate, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000):
+        # tree information
         self.branching_factor = branching_factor
         self.error_rate = error_rate
         self.max_elem = None
 
+        # (calculated) tree information
         self.depth = None
         self.root = branching_factor - 1
-        self.root_nodes = []
+        self.total_nodes = 0
 
+        # eLSH information
         self.eLSH = None
         self.n = n
         self.r = r
         self.c = c
-        self.s = s #samples s bits l times 
+        self.s = s  # samples s bits l times
         self.l = l
         self.lsh = None
-        self.hash = [ [] for i in range(l) ] #lsh output 
 
-        # self.subtrees = [None for i in range(l)] #keeps track of subtrees
-        self.subtrees = []
+        # trees info
+        self.eyes = []
+        self.subtrees = [None for i in range(l)]  # keeps track of subtrees
         self.hash_to_iris = {}
 
-        self.total_nodes = 0
-
-    def search_root_nodes(self, query):
-        root_matches = []
-        for r in range(len(self.root_nodes)):
-            query_lsh = []
-
-            # compute LSH on query
-            for i, j in enumerate(self.root_nodes[r][1]):
-                query_lsh.append(j.hash(query))
-
-            # if query in root BF add subtree to list
-            # self.tree[self.root].data.in_bloomfilter(current_hash)
-            if self.root_nodes[r][0].in_bloomfilter(query_lsh) == True:
-                root_matches.append(r)
-
-        return root_matches
-
-    #compute eLSH and returns the list of length l
-    def compute_eLSH_one(self, element):
-        output = self.eLSH.hash(element) #length of l 
-
+    def put_elements_map(self, element, output):  # puts elements in hash_to_iris
         for index, h in enumerate(output):
-            self.hash[index] += [h] 
             if str(h) in self.hash_to_iris:
                 self.hash_to_iris[str(h)] += [element]
-            else: 
+            else:
                 self.hash_to_iris[str(h)] = [element]
+
+    # compute eLSH and returns the list of length l
+    def compute_eLSH_one(self, element):
+        output = self.eLSH.hash(element.vector)  # length of l
+        self.put_elements_map(element, output)
         return output
 
-    def compute_eLSH(self, elements): #computes the mapping from hash to iris 
-        for i in elements: 
+    # computes eLSH output of multiple elements F
+    def compute_eLSH(self, elements):
+        for i in elements:
             self.compute_eLSH_one(i)
 
-    #creates a new node: bloom filter with elements from actual_elements
-    def new_node(self, num_expected_elements, actual_elements=None): 
-        bf = BloomFilter(max_elements=(self.l*num_expected_elements), error_rate=self.error_rate)
-        n = node(bf)
-        return n
-
-    #TREE SPECIFIC FUNCS
-    def build_index(self, elements, parallel=False):
+    # TREE SPECIFIC FUNCS
+    def build_index(self, elements):
         num_elements = len(elements)
-        level = 0 #levels increase going down 
+        level = 0  # levels increase going down
+
+        self.eyes = elements
 
         self.eLSH = eLSH_import.eLSH(LSH, self.n, self.r, self.c, self.s, self.l)
         self.lsh = self.eLSH.hashes
-        self.compute_eLSH(elements)
+        # print("self.eyes", self.eyes)
+        self.compute_eLSH(self.eyes)
 
-        print("Processes: " + str(mp.cpu_count()))
-        if parallel:
-            self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(delayed(subtree.create_subtree)(self.branching_factor, self.error_rate, h, elements)
-                                           for h in self.lsh)
-            for st in self.subtrees:
-                self.root_nodes.append((st.get_root_node(), st.lsh))
+        for h in range(self.l):
+            st = subtree(h, self.branching_factor, self.error_rate, self.lsh[h])
+            st.build_tree(self.eyes)
+            self.subtrees[h] = st
+            self.total_nodes += st.num_nodes
 
-        else:
-            for h in self.lsh:
-                st = subtree.create_subtree(self.branching_factor, self.error_rate, h, elements)
-                self.subtrees.append(st)
-                self.total_nodes += st.num_nodes
-                self.root_nodes.append(st.get_root_node(), h)
+    def search(self, item):
+        if type(item) == Iris:
+            item = item.vector
 
+        nodes_visited = []
+        leaf_nodes = []
+        returned_iris = []
+        returned_hashes = []
+        access_depth = []  # nodes accessed per depth
 
+        for sub_tree in self.subtrees:
+            st_nodes, st_leaf, st_access, st_hashes = sub_tree.search(item)
 
-    def search(self, item, parallel=False):
-        nodes_visited = [] 
-        leaf_nodes = [] 
-        returned_iris = [] 
-        access_depth = [] #nodes accessed per depth
+            nodes_visited += [st_nodes]
+            leaf_nodes += [st_leaf]
+            access_depth += access_depth
 
-        if parallel:
-            res = Parallel(n_jobs=mp.cpu_count(), prefer="threads")(delayed(subtree.search_subtree)(st, item)
-                for st in self.subtrees)
+            for i in st_hashes:
+                returned_hashes.append(i)
 
-            for st_res in res:
-                nodes_visited += st_res[0]
-                leaf_nodes += st_res[1]
-                access_depth += st_res[2]
-
-        else:
-            for st in self.subtrees:
-                st_nodes, st_leaf, st_access = subtree.search_subtree(st, item)
-                nodes_visited += st_nodes
-                leaf_nodes += st_leaf
-                access_depth += access_depth
+        # print("here h ", self.hash_to_iris)
+        for h in returned_hashes:
+            returned_iris.append(self.hash_to_iris[str(h)])
 
         return nodes_visited, leaf_nodes, returned_iris, access_depth
 
-if __name__ == '__main__':
-    #small test 
-    import random
+    """functions for oram search """
 
-    # n = 100
-    fpr = 0.0001 
-    temp_l = 2
+    # checks root of specified subtree
+    def check_subtree_root(self, subtree_num, item):
+        return self.subtrees[subtree_num].check_root(item)
 
-    try_nums = [2]
-
-    for n in try_nums: 
-        # print('\n--- size of database = %i ---' %n )
-        try_data = ([[random.getrandbits(1) for i in range(1024)] for i in range(n)])
-
-        # temp1 = iris(try_data[0])
-        # print((temp1))
+    # returns a node based on tree identifier specifcation
+    def return_tree_node(self, subtree_num, node):
+        return self.subtrees[subtree_num].get_node(node)
 
 
-        t = main_tree(2, fpr, l = temp_l)
-        t.build_index(try_data)
-        # print("tree built")
-        # t.tree.show()
-        child = random.randint(0,n-1)
-        attempt = try_data[child]
-        p_child = child
-        # print("Depth of tree: ", t.tree.depth())
-        # print("Search for leaf %i" % p_child)
-        s = t.search(attempt)
-        # print("All nodes visited:", s[0])
-        # print("Matched leaf nodes:", s[1])
-        # print("Nodes matched at each level:", s[2])
-        
-        match = 0 
-        non = 0
-        for i in s[3]: 
-            for r in i: 
-                if r == attempt: 
-                    match += 1
-                else: 
-                    non += 1 
+"""
+str_data : the data in form of list of strings 
+"""
 
-        # print("Matches:", match)
-        # print("Non Matches:", non)
 
+def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000):
+    # converts irises in vector form to iris object
+    data = to_iris(vector_data)
+
+    t = main_tree(_branching_factor, _false_pos, n=n, r=r, c=c, s=s, l=l)
+    t.build_index(data)
+
+    return t, data
