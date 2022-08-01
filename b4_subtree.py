@@ -33,6 +33,12 @@ class subtree(object):
 
         self.levels = {}
 
+    @staticmethod
+    def create_subtree(id, branching_factor, error_rate, lsh, elements):
+        st = subtree(id, branching_factor, error_rate, lsh)
+        st.build_tree(elements)
+        return st
+
     # testing funcions
     def show_tree(self):
         return self.tree.show()
@@ -101,20 +107,26 @@ class subtree(object):
     """END"""
 
     # creates a new node: bloom filter with elements from actual_elements
-    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None):
+    def new_node(self, current_node, parent_node, num_expected_elements=0, elements=None, leaf=False):
         self.num_nodes += 1
+
         if current_node == "root":
             # corner case: current_node == "root", parent_node == self.root,
             bf = BloomFilter(max_elements=num_expected_elements * (self.l), error_rate=self.error_rate)
             _node_ = node_data(bf)
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
+
         elif elements != None:
-            bf = BloomFilter(max_elements=(self.l * num_expected_elements), error_rate=self.error_rate)
-            _node_ = node_data(bf)
-            _node_.add_multiple(elements)
+            if leaf:
+                _node_ = elements
+            else:
+                bf = BloomFilter(max_elements=(self.l * num_expected_elements), error_rate=self.error_rate)
+                _node_ = node_data(bf)
+                _node_.add_multiple(elements)
             self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
+
         else:
             self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
@@ -138,14 +150,16 @@ class subtree(object):
             level += 1
             nodes_in_level = self.branching_factor ** level
             items_in_filter = self.branching_factor ** (self.depth - level)
+
             if level == self.depth:
                 for n in range(nodes_in_level):
                     current_node += 1
                     if current_node % self.branching_factor == 0:
                         parent_node += 1
 
-                    if n < self.l:
-                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n])
+                    # if n < self.l:
+                    if n < num_elements:
+                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n], leaf=True)
                     else:
                         self.new_node(current_node, parent_node)
 
@@ -162,8 +176,7 @@ class subtree(object):
                     if elements_in_filter == []:
                         self.new_node(current_node, parent_node)
                     else:
-                        self.new_node(current_node, parent_node, num_expected_elements=items_in_filter,
-                                      elements=elements_in_filter)
+                        self.new_node(current_node, parent_node, num_expected_elements=items_in_filter, elements=elements_in_filter)
 
     def search(self, item):
         depth = self.tree.depth()

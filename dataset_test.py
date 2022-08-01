@@ -1,10 +1,11 @@
 from b4_main_tree import main_tree
+from b4_main_tree import build_db
 import os, glob, numpy
 import random
 import math
 import time
 import argparse
-from b4_node import node
+
 
 def compare_vectors(v1, v2):
     for i in range(len(v1)):
@@ -116,7 +117,7 @@ def compute_sys_rates(tree, queries, parallel):
     for i in range(len(queries)):
         # false_pos = 0
 
-        leaves_match = tree.search(queries[i], False) # parallel = False for now because parallel search is way slower than expected
+        leaves_match = tree.search(queries[i]) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
         print("query = " + str(i))
@@ -174,14 +175,20 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
+        l=8
+        k=2
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
+        print(len(random_data))
+        print(len(random_queries))
         t_end = time.time()
         t_dataset = t_end - t_start
 
-        random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
+        # random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        random_tree.build_index(random_data, parallel)
+        # random_tree.build_index(random_data[:100], parallel)
+
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, False)
         t_end = time.time()
         t_tree = t_end - t_start
 
@@ -189,7 +196,7 @@ if __name__ == '__main__':
         # print(random_tree.search_root_nodes(random_queries[0]))
 
         t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:20], parallel)
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 

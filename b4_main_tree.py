@@ -64,7 +64,7 @@ class main_tree(object):
             self.compute_eLSH_one(i)
 
     # TREE SPECIFIC FUNCS
-    def build_index(self, elements):
+    def build_index(self, elements, parallel=False):
         num_elements = len(elements)
         level = 0  # levels increase going down
 
@@ -75,11 +75,21 @@ class main_tree(object):
         # print("self.eyes", self.eyes)
         self.compute_eLSH(self.eyes)
 
-        for h in range(self.l):
-            st = subtree(h, self.branching_factor, self.error_rate, self.lsh[h])
-            st.build_tree(self.eyes)
-            self.subtrees[h] = st
-            self.total_nodes += st.num_nodes
+        # print("Processes: " + str(mp.cpu_count()))
+        if parallel:
+            # self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
+            #     delayed(subtree.create_subtree)(self.branching_factor, self.error_rate, h, elements)
+            #     for h in self.lsh)
+            return
+
+        else:
+            for h in range(self.l):
+                st = subtree.create_subtree(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes)
+                st.show_tree()
+                self.subtrees[h] = st
+                self.total_nodes += st.num_nodes
+
+
 
     def search(self, item):
         if type(item) == Iris:
@@ -123,11 +133,11 @@ str_data : the data in form of list of strings
 """
 
 
-def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000):
+def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000, parallel=False):
     # converts irises in vector form to iris object
     data = to_iris(vector_data)
 
     t = main_tree(_branching_factor, _false_pos, n=n, r=r, c=c, s=s, l=l)
-    t.build_index(data)
+    t.build_index(data, parallel)
 
     return t, data
