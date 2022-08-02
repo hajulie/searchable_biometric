@@ -5,6 +5,7 @@ import math, os, sys
 import pyoram
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
 
+from LSH import LSH
 from b4_objs import node_data, Iris, to_iris
 
 storage_name = "heap"
@@ -118,7 +119,8 @@ class oblivious_ram(object):
         return orig 
 
     # if things in tree are node_data not actual nodes 
-    def search(self, item): 
+
+    def search(self, item):
         queue = []
         next_level_queue = [] 
         current_level = 1 #hard coded for now
@@ -148,17 +150,26 @@ class oblivious_ram(object):
             current_tree = self.subtrees[tree]
 
             original_node_data = self.retrieve_data(tree, current_level, node)
+            # print(current_level)
+            # print(self.maintree.depth)
+            # print(original_node_data)
+            # print(current_item)
 
-            if original_node_data.in_bloomfilter(current_item):
+            if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 
                 if lst_children != []: 
                     for child in lst_children:
                         next_level_queue.append((tree, child.identifier))
                 
-                else: 
-                    hashes.append(item)
-                    leaf_nodes.append(current_node)
+                # else:
+                #     hashes.append(item)
+                #     leaf_nodes.append(current_node)
+
+            elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
+                hashes.append(item)
+                leaf_nodes.append(current_node)
+
             
             if queue == []: 
                 queue = next_level_queue

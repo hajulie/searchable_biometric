@@ -89,6 +89,9 @@ class main_tree(object):
                 self.subtrees[h] = st
                 self.total_nodes += st.num_nodes
 
+        if self.subtrees:
+            self.depth = self.subtrees[0].depth
+
 
 
     def search(self, item):
