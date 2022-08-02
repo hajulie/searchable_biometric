@@ -7,3 +7,4 @@ datasets/*
 tests_graph_csv/.DS_Store
 .DS_Store
 .vscode/
+heap*
