@@ -85,7 +85,7 @@ class main_tree(object):
         else:
             for h in range(self.l):
                 st = subtree.create_subtree(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes)
-                st.show_tree()
+                # st.show_tree()
                 self.subtrees[h] = st
                 self.total_nodes += st.num_nodes
 

@@ -125,7 +125,7 @@ def compute_sys_rates(tree, queries, parallel):
         print(leaves_match)
 
         # get rid of duplicates in results
-        res = list(set(leaves_match[1]))
+        res = list(set([item for sublist in leaves_match[1] for item in sublist]))
 
         if int(leaves[i].tag) in res:
             true_pos = true_pos + 1
@@ -175,19 +175,15 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
-        l=8
-        k=2
+        # l=10
+        # lsh_size=5
+        # k=5
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
-        print(len(random_data))
-        print(len(random_queries))
         t_end = time.time()
         t_dataset = t_end - t_start
 
-        # random_tree = main_tree(branching_factor, bf_fpr, n, lsh_r, lsh_c, lsh_size, k)
         t_start = time.time()
-        # random_tree.build_index(random_data[:100], parallel)
-
         random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, False)
         t_end = time.time()
         t_tree = t_end - t_start

@@ -54,10 +54,10 @@ class Iris(object):
 
 # converts array of bits to iris object
 def to_iris(str_data): 
-    new = [] 
+    newiris = []
     for index, i in enumerate(str_data):
         if type(i) == list: 
-            new.append(Iris(i, index))
+            newiris.append(Iris(i, index))
         else: 
-            new.append(i)
-    return new
+            newiris.append(i)
+    return newiris

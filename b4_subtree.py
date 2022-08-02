@@ -52,7 +52,7 @@ class subtree(object):
     def calculate_depth(self):
         self.depth = math.ceil(math.log(self.max_elem, self.branching_factor))
 
-    # helper func to calculate lsh
+    # helper function to compute LSH
     def calculate_LSH(self, item):
         res = []
         for i, j in enumerate(self.lsh):
@@ -73,7 +73,9 @@ class subtree(object):
 
     def add_child(self, parent_node, child):
         node_type = self.tree.get_node(parent_node).data
-        node_type.add_child(child)
+
+        if node_type is not None:
+            node_type.add_child(child)
 
     # returns children of current node
     def get_children(self, node):
@@ -120,6 +122,7 @@ class subtree(object):
         elif elements != None:
             if leaf:
                 _node_ = elements
+
             else:
                 bf = BloomFilter(max_elements=(self.l * num_expected_elements), error_rate=self.error_rate)
                 _node_ = node_data(bf)
@@ -203,8 +206,13 @@ class subtree(object):
                 for c in children:
                     child = c.identifier
                     access_depth[child_depth].append(child)
-                    if self.tree[child].data != None:
+
+                    if self.tree[child].data != None and child_depth != depth:
                         if self.tree[child].data.in_bloomfilter(current_hash):
+                            stack.append(child)
+                            break
+                    elif self.tree[child].data != None and child_depth == depth:
+                        if LSH.compareLSH(self.tree[child].data, current_hash):
                             stack.append(child)
                             break
             else:
@@ -212,6 +220,6 @@ class subtree(object):
 
         hashes = []
         for l in leaf_nodes:
-            hashes.append(self.tree[l].data.items[0])
+            hashes.append(self.tree[l].data)
 
         return nodes_visited, leaf_nodes, access_depth, hashes
