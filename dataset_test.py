@@ -184,7 +184,8 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, False)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
 

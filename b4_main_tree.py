@@ -15,6 +15,10 @@ from b4_objs import node_data, Iris, to_iris
 from b4_subtree import subtree
 import b4_oram
 
+import multiprocessing as mp
+from joblib import Parallel, delayed
+
+
 storage_name = "heap.bin"
 
 
@@ -77,10 +81,11 @@ class main_tree(object):
 
         # print("Processes: " + str(mp.cpu_count()))
         if parallel:
-            # self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
-            #     delayed(subtree.create_subtree)(self.branching_factor, self.error_rate, h, elements)
-            #     for h in self.lsh)
-            return
+            self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
+                delayed(subtree.create_subtree)(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes)
+                for h in range(self.l))
+
+            self.total_nodes = sum([st.num_nodes for st in self.subtrees])
 
         else:
             for h in range(self.l):
