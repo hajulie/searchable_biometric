@@ -103,6 +103,7 @@ class oblivious_ram(object):
 
     def retrieve_data(self, tree, depth, node): 
         current_oram_map = self.oram_map[tree]
+        # print(current_oram_map)
         current_oram = self.oram[depth]
         current_oram_file = PathORAM(self.storage_name + str(depth), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
         raw_data = [] 
@@ -142,7 +143,7 @@ class oblivious_ram(object):
                 lst_children = current_subtree.get_children(current_subtree.root)
                 for child in lst_children: 
                     queue.append((index, child.identifier))
-        
+
         while queue != []: 
             current_node = queue.pop(0)
             tree, node = current_node[0], current_node[1] 
@@ -150,6 +151,7 @@ class oblivious_ram(object):
             current_tree = self.subtrees[tree]
 
             original_node_data = self.retrieve_data(tree, current_level, node)
+            # print(original_node_data)
             # print(current_level)
             # print(self.maintree.depth)
             # print(original_node_data)
@@ -160,7 +162,8 @@ class oblivious_ram(object):
 
                 if lst_children != []: 
                     for child in lst_children:
-                        next_level_queue.append((tree, child.identifier))
+                        # next_level_queue.append((tree, child.identifier))
+                        next_level_queue.append((tree, child))
                 
                 # else:
                 #     hashes.append(item)

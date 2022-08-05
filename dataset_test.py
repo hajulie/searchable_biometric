@@ -188,7 +188,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data[:8], n, lsh_r, lsh_c, 12, 1000, parallel)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, 1, False)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -197,9 +197,10 @@ if __name__ == '__main__':
         if oram:
             print("Building ORAM...")
             storage_t = oblivious_ram()
+            print("ORAM created, now putting tree in it...")
             storage_t.apply(random_tree)
+            print("ORAM finished.")
             random_tree = storage_t
-            print("ORAM built.")
         t_end = time.time()
         t_oram = t_end - t_start
 
