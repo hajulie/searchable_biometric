@@ -97,7 +97,14 @@ class main_tree(object):
         if self.subtrees:
             self.depth = self.subtrees[0].depth
 
+    def search_root_nodes(self, query):
+        matching_subtrees = []
 
+        for st in self.subtrees:
+            if st.check_root(st.calculate_LSH(query)):
+                matching_subtrees.append(st.identifier)
+
+        return matching_subtrees
 
     def search(self, item):
         if type(item) == Iris:

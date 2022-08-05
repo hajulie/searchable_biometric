@@ -123,30 +123,31 @@ class oblivious_ram(object):
 
     def search(self, item):
         queue = []
-        next_level_queue = [] 
+        next_level_queue = []
         current_level = 1 #hard coded for now
 
         leaf_nodes = []
         hashes = []
         lookup = []
-        
 
-        if type(item) != Iris: 
+
+        if type(item) != Iris:
             item = to_iris([item])
         hashes = self.maintree.eLSH.hash(item[0].vector)
 
-        # check roots first 
-        for (index, item) in enumerate(hashes): 
-            current_subtree = self.subtrees[index]
+        # get matching root nodes
+        matching_subtrees = self.maintree.search_root_nodes(item[0].vector)
+        print(matching_subtrees)
 
-            if current_subtree.check_root(item):
-                lst_children = current_subtree.get_children(current_subtree.root)
-                for child in lst_children: 
-                    queue.append((index, child.identifier))
+        # create list of children nodes to visit
+        for st in matching_subtrees:
+            lst_children = self.maintree.subtrees[st].get_children(1) # root is always node 1
+            for child in lst_children:
+                queue.append((st, child.identifier))
 
-        while queue != []: 
+        while queue != []:
             current_node = queue.pop(0)
-            tree, node = current_node[0], current_node[1] 
+            tree, node = current_node[0], current_node[1]
             current_item = hashes[tree]
             current_tree = self.subtrees[tree]
 
@@ -154,35 +155,31 @@ class oblivious_ram(object):
             # print(original_node_data)
             # print(current_level)
             # print(self.maintree.depth)
-            # print(original_node_data)
             # print(current_item)
 
             if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 
-                if lst_children != []: 
+                if lst_children != []:
                     for child in lst_children:
-                        # next_level_queue.append((tree, child.identifier))
                         next_level_queue.append((tree, child))
-                
-                # else:
-                #     hashes.append(item)
-                #     leaf_nodes.append(current_node)
 
             elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
                 hashes.append(item)
                 leaf_nodes.append(current_node)
 
-            
-            if queue == []: 
+
+            if queue == []:
                 queue = next_level_queue
                 next_level_queue = []
-                current_level += 1 
+                current_level += 1
 
+
+        # retrieve irises corresponding to returned leaf nodes
         irises = []
-        for i in hashes: 
-            returned_irises = self.check_hash_to_iris(i)
-            irises.append(returned_irises)
+        # for i in hashes:
+        #     returned_irises = self.check_hash_to_iris(i)
+        #     irises.append(returned_irises)
 
         return irises, leaf_nodes
 

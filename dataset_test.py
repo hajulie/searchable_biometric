@@ -122,7 +122,7 @@ def compute_sys_rates(tree, queries, parallel):
         leaves_match = tree.search(queries[i]) # parallel = False for now because parallel search is way slower than expected
         visited_nodes.append(len(leaves_match[0]))
 
-        print("query = " + str(i))
+        # print("query = " + str(i))
         print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
         print(leaves_match)
 
@@ -182,13 +182,15 @@ if __name__ == '__main__':
         # l=10
         # lsh_size=5
         # k=5
+        oram = False
+
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
         t_end = time.time()
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, 1, False)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data[:8], n, lsh_r, lsh_c, 4, 10, False)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -204,11 +206,11 @@ if __name__ == '__main__':
         t_end = time.time()
         t_oram = t_end - t_start
 
-        # print("Root nodes lists:")
-        # print(random_tree.search_root_nodes(random_queries[0]))
+        print("Root nodes lists:")
+        print(random_tree.search_root_nodes(random_queries[0]))
 
         t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:2], parallel)
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:1], parallel)
         t_end = time.time()
         t_search = t_end - t_start
 

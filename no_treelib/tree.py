@@ -47,11 +47,11 @@ class Node(object):
         self.items.append(item) 
 
     def add_multiple(self, lst_items): 
-        if type(items[0]) == list:
-            for i in items:
+        if type(lst_items[0]) == list:
+            for i in lst_items:
                 self.add_item(i) 
         else: 
-            self.add_item(items)
+            self.add_item(lst_items)
 
     def add_child(self, child): 
         self.children.append(child)
