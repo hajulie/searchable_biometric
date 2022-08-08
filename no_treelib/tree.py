@@ -122,7 +122,7 @@ class SubTree(object):
 
     def new_node(self, current, parent, depth, num_expected_elements=0, elements=None): 
         self.num_nodes += 1
-        if current_node == self.root: 
+        if current == self.root:
             bf = BloomFilter(max_elements=num_expected_elements*(self.l), error_rate=self.error_rate)
             _node_ = Node(current, parent, depth, bloom_filter=bf)
             _node_.add_multiple(elements)
@@ -164,9 +164,9 @@ class SubTree(object):
                         parent_node += 1
 
                     if n < self.l : 
-                        self.new_node(current, parent, level, 1, hashes[n])
+                        self.new_node(current_node, parent_node, level, 1, hashes[n])
                     else: 
-                        self.new_node(current, parent, level)
+                        self.new_node(current_node, parent_node, level)
             
             else: 
                 for n in range(nodes_in_level):
@@ -179,9 +179,9 @@ class SubTree(object):
                     hashes_in_filter = hashes[begin:end]
 
                     if hashes_in_filter == []:
-                        self.new_node(current, parent, level)
+                        self.new_node(current_node, parent_node, level)
                     else: 
-                        self.new_node(current, parent, level, num_expected_elements=items_in_filter, elements=hashes_in_filter)
+                        self.new_node(current_node, parent_node, level, num_expected_elements=items_in_filter, elements=hashes_in_filter)
 
     def search(self, item): 
         stack = []
