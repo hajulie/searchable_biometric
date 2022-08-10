@@ -70,10 +70,11 @@ class oblivious_ram(object):
         depth = self.maintree.subtrees[0].get_depth()
 
         self.oram = [None for i in range(depth+1)] 
-        self.oram_map = [{} for i in range(depth+1)] 
-        add_to = [0 for i in range(depth+1)] 
+        # self.oram_map = [{} for i in range(depth+1)]
+        self.oram_map = [{} for i in range(len(self.maintree.subtrees))]
+        add_to = [0 for i in range(depth+1)]
 
-        for (ind, subtree) in enumerate(self.maintree.subtrees): 
+        for (ind, subtree) in enumerate(self.maintree.subtrees):
             node_block_list = self.node_map[ind]
             for node in node_block_list: 
                 node_depth = subtree.get_depth(node)
@@ -94,7 +95,7 @@ class oblivious_ram(object):
 
                 for block in node_block_list[node]: 
                     f.write_block(add_to[node_depth], block)
-                    if node in self.oram_map[ind]: 
+                    if node in self.oram_map[ind]:
                         self.oram_map[ind][node].append(add_to[node_depth])
                     else: 
                         self.oram_map[ind][node] = [add_to[node_depth]]

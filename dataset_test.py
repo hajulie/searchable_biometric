@@ -120,10 +120,12 @@ def compute_sys_rates(tree, queries, parallel):
         # false_pos = 0
 
         leaves_match = tree.search(queries[i]) # parallel = False for now because parallel search is way slower than expected
-        visited_nodes.append(len(leaves_match[0]))
+
+        if len(leaves_match) > 2:
+            visited_nodes.append(len(leaves_match[2]))
 
         # print("query = " + str(i))
-        print("result : (nodes_visited, leaf_nodes, returned_iris, access_depth)")
+        print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
         print(leaves_match)
 
         # get rid of duplicates in results
@@ -179,10 +181,9 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
-        # l=10
         # lsh_size=5
         # k=5
-        oram = False
+        # oram = False
 
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
@@ -190,10 +191,13 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data[:8], n, lsh_r, lsh_c, 4, 10, False)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
+
+        # print("Root nodes lists:")
+        # print(random_tree.search_root_nodes(random_queries))
 
         t_start = time.time()
         if oram:
@@ -205,9 +209,6 @@ if __name__ == '__main__':
             random_tree = storage_t
         t_end = time.time()
         t_oram = t_end - t_start
-
-        print("Root nodes lists:")
-        print(random_tree.search_root_nodes(random_queries[0]))
 
         t_start = time.time()
         (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:1], parallel)

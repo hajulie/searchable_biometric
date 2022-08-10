@@ -130,7 +130,7 @@ class main_tree(object):
         for h in returned_hashes:
             returned_iris.append(self.hash_to_iris[str(h)])
 
-        return nodes_visited, leaf_nodes, returned_iris, access_depth
+        return returned_iris, leaf_nodes, nodes_visited, access_depth
 
     """functions for oram search """
 
