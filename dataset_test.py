@@ -1,3 +1,5 @@
+import sys
+
 from b4_main_tree import main_tree
 from b4_main_tree import build_db
 from b4_oram import oblivious_ram
@@ -153,6 +155,8 @@ def compute_sys_rates(tree, queries, parallel):
 
 
 if __name__ == '__main__':
+    print(sys.version)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
     parser.add_argument('--oram', help="Use ORAM.", type=int, default=1)
@@ -191,7 +195,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data[:100], n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -210,18 +214,18 @@ if __name__ == '__main__':
         t_end = time.time()
         t_oram = t_end - t_start
 
-        t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:1], parallel)
-        t_end = time.time()
-        t_search = t_end - t_start
+        # t_start = time.time()
+        # (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:100], parallel)
+        # t_end = time.time()
+        # t_search = t_end - t_start
 
         print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(len(random_queries)))
-        print("Random dataset/queries : TPR = " + str(rand_tpr))
-        print("Random dataset/queries : FPR = " + str(rand_fpr))
+        # print("Random dataset/queries : TPR = " + str(rand_tpr))
+        # print("Random dataset/queries : FPR = " + str(rand_fpr))
         print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
+        # print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
@@ -231,7 +235,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        ND_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        ND_tree, data = build_db(branching_factor, bf_fpr, ND_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(ND_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -267,12 +271,12 @@ if __name__ == '__main__':
     if args.dataset == "synth" or args.dataset == "all":
 
         t_start = time.time()
-        synthetic_dataset, synthetic_queries = build_synthetic_dataset(l, n, t)
+        synthetic_data, synthetic_queries = build_synthetic_dataset(l, n, t)
         t_end = time.time()
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        synth_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        synth_tree, data = build_db(branching_factor, bf_fpr, synthetic_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(synth_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -290,7 +294,7 @@ if __name__ == '__main__':
         t_end = time.time()
         t_search = t_end - t_start
 
-        print("Synthetic dataset/queries : Size dataset = " + str(len(synthetic_dataset)) + " - size queries = " + str(len(synthetic_queries)))
+        print("Synthetic dataset/queries : Size dataset = " + str(len(synthetic_data)) + " - size queries = " + str(len(synthetic_queries)))
         print("Synthetic dataset/queries : TPR = " + str(mixed_tpr))
         print("Synthetic dataset/queries : FPR = " + str(mixed_fpr))
         print("Synthetic dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")

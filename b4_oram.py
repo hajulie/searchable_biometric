@@ -1,6 +1,7 @@
 from Crypto.Util.Padding import pad, unpad
 import pickle
 import math, os, sys
+from memory_profiler import profile
 
 import pyoram
 from pyoram.oblivious_storage.tree.path_oram import PathORAM
@@ -35,6 +36,7 @@ class oblivious_ram(object):
             with_padding = pad(item, self.block_size)
         return with_padding
 
+    @profile
     def create_map(self): 
         # init map 
         # self.node_map[tree][node]
@@ -64,7 +66,8 @@ class oblivious_ram(object):
                     #TEST WITH PRINT STATEMENT
                     for j in range(len(temp_blocks)):
                         subtree_map[node] += ([temp_blocks[j]]) #? not sure if this will translate into oram 
-    
+
+    @profile
     def depth_oram(self): # oram per level
 
         depth = self.maintree.subtrees[0].get_depth()
@@ -183,7 +186,6 @@ class oblivious_ram(object):
         #     irises.append(returned_irises)
 
         return irises, leaf_nodes
-
 
     def apply(self, main_tree, block_size=256): 
         self.maintree = main_tree
