@@ -131,7 +131,8 @@ def compute_sys_rates(tree, queries, parallel):
         print(leaves_match)
 
         # get rid of duplicates in results
-        res = list(set([item for sublist in leaves_match[1] for item in sublist]))
+        # res = list(set([item for sublist in leaves_match[1] for item in sublist]))
+        res = list(set([item[1] for item in leaves_match[1]]))
 
         if int(leaves[i].tag) in res:
             true_pos = true_pos + 1
@@ -186,7 +187,9 @@ if __name__ == '__main__':
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
         # lsh_size=5
-        # k=5
+        # k=2
+        # l=4
+        # t=0
         # oram = False
 
         t_start = time.time()
@@ -195,7 +198,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data[:100], n, lsh_r, lsh_c, lsh_size, k, parallel)
+        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -214,18 +217,18 @@ if __name__ == '__main__':
         t_end = time.time()
         t_oram = t_end - t_start
 
-        # t_start = time.time()
-        # (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries[:100], parallel)
-        # t_end = time.time()
-        # t_search = t_end - t_start
+        t_start = time.time()
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
+        t_end = time.time()
+        t_search = t_end - t_start
 
         print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(len(random_queries)))
-        # print("Random dataset/queries : TPR = " + str(rand_tpr))
-        # print("Random dataset/queries : FPR = " + str(rand_fpr))
+        print("Random dataset/queries : TPR = " + str(rand_tpr))
+        print("Random dataset/queries : FPR = " + str(rand_fpr))
         print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        # print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
+        print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
