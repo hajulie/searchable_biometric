@@ -24,7 +24,7 @@ class subtree(object):
         self.l = len(lsh)
         self.branching_factor = branching_f
         self.error_rate = error_rate
-        self.num_nodes = 1 # TODO num_nodes is incorrect but fixing it breaks ORAM search
+        self.num_nodes = 0
         self.max_elem = None
 
         self.tree = None
