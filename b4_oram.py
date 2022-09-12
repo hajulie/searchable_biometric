@@ -17,7 +17,7 @@ class oblivious_ram(object):
     def __init__(self):
         self.maintree = None 
         self.subtrees = None 
-        self.block_sizes = []
+        self.block_size = 256
         self.node_map = None 
         self.storage_name = storage_name
         self.oram_map = None
@@ -30,27 +30,42 @@ class oblivious_ram(object):
         current_map = self.maintree.hash_to_iris
         return current_map[str(h)]
 
-    def padding(self, item, depth):
-        if len(item) == self.block_sizes[depth]:
+    def padding(self, item):
+        if len(item) == self.block_size:
             with_padding = item
         else: 
-            with_padding = pad(item, self.block_sizes[depth])
+            with_padding = pad(item, self.block_size)
         return with_padding
+
+    def create_blocks(self, serialized_node):
+        blocks_list = []
+        num_blocks = (len(serialized_node) // self.block_size) + 1
+
+        for i in range(num_blocks):
+            block = self.padding(serialized_node[i * self.block_size : (i + 1) * self.block_size])
+            blocks_list.append(block)
+
+        return blocks_list
 
     def retrieve_data(self, tree, depth, node):
         current_oram_map = self.oram_map[tree]
         current_oram = self.oram[depth-1]
-        current_oram_file = PathORAM(self.storage_name + str(depth-1), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
+        raw_data = []
 
         if node not in current_oram_map:
             print("Value does not exist") #for testing
         else:
-            pos = current_oram_map[node]
-            raw_data = current_oram_file.read_block(pos)
-            rebuilt_node = unpad(raw_data, self.block_sizes[depth - 1])
+            current_oram_file = PathORAM(self.storage_name + str(depth - 1), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
+            blocks_pos = current_oram_map[node]
+
+            for pos in blocks_pos:
+                raw_data.append(current_oram_file.read_block(pos))
+
+            rebuilt_node = unpad(b''.join(raw_data), self.block_size)
             orig = pickle.loads(rebuilt_node)
 
-        current_oram_file.close()
+            current_oram_file.close()
+
         return orig 
 
     # if things in tree are node_data not actual nodes 
@@ -112,7 +127,6 @@ class oblivious_ram(object):
 
     def init_maps(self):
         nodes_map = []
-        self.oram_map = [{} for i in range(len(self.subtrees))]
 
         for st_id in range(len(self.subtrees)):
             st = self.subtrees[st_id]
@@ -126,40 +140,41 @@ class oblivious_ram(object):
                     pickled_node = pickle.dumps(current_node)
                     depth = st.get_depth(node_id)
 
-                    # if depth already encountered, add node data and check if size is larger
-                    if len(self.block_sizes) >= depth:
-                        nodes_map[depth-1].append(pickled_node)
+                    # if new depth, create corresponding array
+                    if len(nodes_map) < depth:
+                        nodes_map.append([])
 
-                        if self.block_sizes[depth-1] < len(pickled_node) + 1:
-                            self.block_sizes[depth-1] = len(pickled_node) + 1
+                    blocks_list = self.create_blocks(pickled_node)
 
-                    # if depth never encountered, create it and add node data and size
-                    else:
-                        nodes_map.append([pickled_node])
-                        self.block_sizes.append(len(pickled_node) + 1)
-
-                    # update node to block mapping for client
-                    self.oram_map[st_id][node_id] = len(nodes_map[depth - 1]) - 1
+                    for block in blocks_list:
+                        nodes_map[depth-1].append((st_id, node_id, [block]))
 
         return nodes_map
 
     def build_oram(self, nodes_map):
         self.oram = [None for i in range(self.maintree.subtrees[0].get_depth())]
+        self.oram_map = [{} for i in range(len(self.subtrees))]
 
         for (depth, serialized_nodes) in enumerate(nodes_map):
-            block_count = len(self.maintree.subtrees) * 2 ** (depth + 1) # depth = 0 since array starts at 0 but real depth would be depth+1 if root level = depth 0 (since root not in array)
-            block_size = self.block_sizes[depth]
+            block_count = len(serialized_nodes)
+            block_id = 0
 
             file_name = self.storage_name + str(depth)
             if os.path.exists(file_name):
                 os.remove(file_name)
-            with PathORAM.setup(file_name, block_size, block_count, storage_type='file') as f:
+
+            with PathORAM.setup(file_name, self.block_size, block_count, storage_type='file') as f:
                 self.oram[depth] = f
-                for (node_id, node) in enumerate(serialized_nodes):
-                    # pad serialized node if needed
-                    block = self.padding(node, depth)
-                    f.write_block(node_id, block)
-                    self.tmp_map.append(node_id)
+
+                for (st_id, node_id, blocks_list) in serialized_nodes:
+                    if node_id not in self.oram_map[st_id]:
+                        self.oram_map[st_id][node_id] = []
+
+                    for block in blocks_list:
+                        f.write_block(block_id, block)
+                        # add node to block mapping for client
+                        self.oram_map[st_id][node_id].append(block_id)
+                        block_id = block_id + 1
 
 
 
