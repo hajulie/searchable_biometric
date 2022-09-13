@@ -14,7 +14,8 @@ ext = ".bin"
 
 class oblivious_ram(object): 
 
-    def __init__(self):
+    def __init__(self, files_dir=""):
+        self.files_dir = files_dir
         self.maintree = None 
         self.subtrees = None 
         self.block_size = 256
@@ -55,7 +56,7 @@ class oblivious_ram(object):
         if node not in current_oram_map:
             print("Value does not exist") #for testing
         else:
-            current_oram_file = PathORAM(self.storage_name + str(depth - 1), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
+            current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
             blocks_pos = current_oram_map[node]
 
             for pos in blocks_pos:
@@ -159,7 +160,7 @@ class oblivious_ram(object):
             block_count = len(serialized_nodes)
             block_id = 0
 
-            file_name = self.storage_name + str(depth)
+            file_name = self.files_dir + self.storage_name + str(depth)
             if os.path.exists(file_name):
                 os.remove(file_name)
 

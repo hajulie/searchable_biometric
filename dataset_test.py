@@ -161,6 +161,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
     parser.add_argument('--oram', help="Use ORAM.", type=int, default=1)
+    parser.add_argument('--oram_dir', help="Directory fo ORAM files storage.", type=str, default="")
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
     parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
@@ -209,7 +210,7 @@ if __name__ == '__main__':
         t_start = time.time()
         if oram:
             print("Building ORAM...")
-            storage_t = oblivious_ram()
+            storage_t = oblivious_ram(args.oram_dir)
             print("ORAM created, now putting tree in it...")
             storage_t.apply(random_tree)
             print("ORAM finished.")
