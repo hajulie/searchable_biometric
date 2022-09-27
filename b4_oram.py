@@ -138,7 +138,11 @@ class oblivious_ram(object):
                 else:
                     # serialize node data
                     current_node = st.get_node_data(node_id)
+                    # print("size node data = " + str(len(current_node)))
+                    print(current_node)
                     pickled_node = pickle.dumps(current_node)
+                    print("size pickled = " +str(len(pickled_node)))
+                    # print(pickled_node)
                     depth = st.get_depth(node_id)
 
                     # if new depth, create corresponding array
@@ -158,6 +162,7 @@ class oblivious_ram(object):
 
         for (depth, serialized_nodes) in enumerate(nodes_map):
             block_count = len(serialized_nodes)
+            print("#blocks = " + str(block_count))
             block_id = 0
 
             file_name = self.files_dir + self.storage_name + str(depth)

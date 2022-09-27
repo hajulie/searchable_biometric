@@ -11,13 +11,14 @@ from Crypto.Util.Padding import pad, unpad
 class node_data(object): 
     def __init__(self, bloom_filter):
         self.bloom_filter = bloom_filter
-        self.items = [] 
+        # self.items = []
         self.children = []
-        self.irises = []
+        # self.irises = []
     
-    def add_item(self, item): 
+    def add_item(self, item):
+        print("bf length = " + str(len(str(item))))
         self.bloom_filter.add(str(item))
-        self.items.append(item)
+        # self.items.append(item)
 
     def add_multiple(self, items): 
         if type(items[0]) == list:
@@ -27,7 +28,8 @@ class node_data(object):
             self.add_item(items)
     
     def add_child(self, child): 
-        # child is node identifier number 
+        # child is node identifier number
+        print("child type = " + str(type(child)))
         self.children.append(child)
     
     def get_children(self):
@@ -37,8 +39,8 @@ class node_data(object):
         str_item = str(item)
         return str_item in self.bloom_filter
     
-    def add_iris(self, iris): 
-        self.irises.append(iris)
+    # def add_iris(self, iris):
+    #     self.irises.append(iris)
 
 
 class Iris(object): 
