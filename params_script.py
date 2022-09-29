@@ -72,13 +72,13 @@ def sys_params_to_csv(l, b,  n, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, desired_f
         # create the csv writer
         writer = csv.writer(f)
 
-        for s in range(10, 50, 2):
+        for s in range(2, 44, 2):
             lsh_tpr_s = pow(lsh_tpr, s)
             lsh_fpr_s = pow(lsh_fpr, s)
-            min_trees=1000000
+            min_trees=100000000
             max_trees=0
 
-            for k in range(1000, 800000, 100):
+            for k in range(1000, 80000000, 100):
                 # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
                 (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
                 #print(sys_tpr)
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--db_size', help="Number of records stored in the database", type=int, default=1000000)
     parser.add_argument('--n', help="Feature vectors size in bits", type=int, default=1024)
     parser.add_argument('--sys_tpr', help="Desired system True Positive Rate (TPR)", type=float, default=0.95)
-    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.01)
+    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.00001)
     parser.add_argument('--bf_fpr', help="Bloom Filter FPR", type=float, default=0.0001)
     # parser.add_argument('--lsh_r', help="LSH r param", type=float, default=0.3)
     # parser.add_argument('--lsh_c', help="LSH c param", type=float, default=0.0001)

@@ -140,10 +140,12 @@ class oblivious_ram(object):
                     current_node = st.get_node_data(node_id)
                     # print("size node data = " + str(len(current_node)))
                     print(current_node)
+             #       print("About to pickle node")
                     pickled_node = pickle.dumps(current_node)
-                    print("size pickled = " +str(len(pickled_node)))
+                    #print("size pickled = " +str(len(pickled_node)))
                     # print(pickled_node)
                     depth = st.get_depth(node_id)
+                 #   print("size pickled = " + str(len(pickled_node))+" at depth "+str(depth))
 
                     # if new depth, create corresponding array
                     if len(nodes_map) < depth:
@@ -161,8 +163,9 @@ class oblivious_ram(object):
         self.oram_map = [{} for i in range(len(self.subtrees))]
 
         for (depth, serialized_nodes) in enumerate(nodes_map):
+         #   print("Depth "+str(depth)+", serialized nodes "+str(serialized_nodes))
             block_count = len(serialized_nodes)
-            print("#blocks = " + str(block_count))
+          #  print("#blocks = " + str(block_count))
             block_id = 0
 
             file_name = self.files_dir + self.storage_name + str(depth)

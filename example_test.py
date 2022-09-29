@@ -175,6 +175,7 @@ if __name__ == '__main__':
     print("\n --------------- TEST ORAM --------------- \n")
 
     storage_t = oblivious_ram()
+    print("Storing the database")
     storage_t.apply(t)
 
     # try_search = random.randint(0,n-1)

@@ -189,7 +189,7 @@ if __name__ == '__main__':
     if args.dataset == "rand" or args.dataset == "all":
         # lsh_size=5
         k=1
-        l=16
+        l=1000
         # t=0
         # oram = False
 

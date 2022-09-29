@@ -8,12 +8,13 @@ from LSH import LSH
 import pickle
 from Crypto.Util.Padding import pad, unpad
 
-class node_data(object): 
-    def __init__(self, bloom_filter):
+class node_data(object):
+    def __init__(self, bloom_filter, children):
         self.bloom_filter = bloom_filter
-        # self.items = []
-        self.children = []
-        # self.irises = []
+        self.children = children
+
+    def __reduce__(self):
+        return self.__class__, (self.bloom_filter, self.children)
     
     def add_item(self, item):
         print("bf length = " + str(len(str(item))))
