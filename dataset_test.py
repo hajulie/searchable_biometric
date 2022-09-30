@@ -188,8 +188,8 @@ if __name__ == '__main__':
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
         # lsh_size=5
-        k=1
-        l=1000
+        k=500
+        l=513
         # t=0
         # oram = False
 
@@ -218,18 +218,18 @@ if __name__ == '__main__':
         t_end = time.time()
         t_oram = t_end - t_start
 
-        # t_start = time.time()
-        # (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
-        # t_end = time.time()
-        # t_search = t_end - t_start
+        t_start = time.time()
+        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
+        t_end = time.time()
+        t_search = t_end - t_start
 
         print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(len(random_queries)))
-        # print("Random dataset/queries : TPR = " + str(rand_tpr))
-        # print("Random dataset/queries : FPR = " + str(rand_fpr))
-        # print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
-        # print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
-        # print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        # print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
+        print("Random dataset/queries : TPR = " + str(rand_tpr))
+        print("Random dataset/queries : FPR = " + str(rand_fpr))
+        print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
+        print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
+        print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
+        print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
