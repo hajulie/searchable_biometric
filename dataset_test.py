@@ -188,8 +188,8 @@ if __name__ == '__main__':
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
         # lsh_size=5
-        k=500
-        l=513
+        k=100
+        l=100
         # t=0
         # oram = False
 

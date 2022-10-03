@@ -78,7 +78,7 @@ def sys_params_to_csv(l, b,  n, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, desired_f
             min_trees=100000000
             max_trees=0
 
-            for k in range(1000, 80000000, 100):
+            for k in range(100, 100000, 100):
                 # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
                 (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
                 #print(sys_tpr)

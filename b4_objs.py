@@ -17,9 +17,7 @@ class node_data(object):
         return self.__class__, (self.bloom_filter, self.children)
     
     def add_item(self, item):
-        print("bf length = " + str(len(str(item))))
         self.bloom_filter.add(str(item))
-        # self.items.append(item)
 
     def add_multiple(self, items): 
         if type(items[0]) == list:
@@ -30,7 +28,6 @@ class node_data(object):
     
     def add_child(self, child): 
         # child is node identifier number
-        print("child type = " + str(type(child)))
         self.children.append(child)
     
     def get_children(self):
