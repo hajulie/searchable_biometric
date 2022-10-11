@@ -12,14 +12,15 @@ from b4_objs import node_data, Iris, to_iris
 storage_name = "heap"
 ext = ".bin"
 
-class oblivious_ram(object, total_accesses = 5): 
 
-    def __init__(self, files_dir=""):
+class oblivious_ram(object):
+
+    def __init__(self, files_dir="", total_accesses=5):
         self.files_dir = files_dir
-        self.maintree = None 
-        self.subtrees = None 
+        self.maintree = None
+        self.subtrees = None
         self.block_size = 256
-        self.node_map = None 
+        self.node_map = None
         self.storage_name = storage_name
         self.oram_map = None
         self.oram = None
@@ -28,14 +29,14 @@ class oblivious_ram(object, total_accesses = 5):
         self.tmp_map = []
         self.total_accesses = total_accesses
 
-    def check_hash_to_iris(self, h): 
+    def check_hash_to_iris(self, h):
         current_map = self.maintree.hash_to_iris
         return current_map[str(h)]
 
     def padding(self, item):
         if len(item) == self.block_size:
             with_padding = item
-        else: 
+        else:
             with_padding = pad(item, self.block_size)
         return with_padding
 
@@ -44,21 +45,22 @@ class oblivious_ram(object, total_accesses = 5):
         num_blocks = (len(serialized_node) // self.block_size) + 1
 
         for i in range(num_blocks):
-            block = self.padding(serialized_node[i * self.block_size : (i + 1) * self.block_size])
+            block = self.padding(serialized_node[i * self.block_size: (i + 1) * self.block_size])
             blocks_list.append(block)
 
         return blocks_list
 
     def retrieve_data(self, tree, depth, node):
         current_oram_map = self.oram_map[tree]
-        current_oram = self.oram[depth-1]
+        current_oram = self.oram[depth - 1]
         raw_data = []
 
         if node not in current_oram_map:
-            print("Value does not exist") #for testing
+            print("Value does not exist")  # for testing
             print(current_oram_map)
         else:
-            current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash, current_oram.position_map, key=current_oram.key, storage_type='file')
+            current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash,
+                                         current_oram.position_map, key=current_oram.key, storage_type='file')
             blocks_pos = current_oram_map[node]
 
             for pos in blocks_pos:
@@ -70,14 +72,14 @@ class oblivious_ram(object, total_accesses = 5):
             current_oram_file.close()
         # print("original type:" , type(orig) == list)
 
-        return orig 
+        return orig
 
-    # if things in tree are node_data not actual nodes 
+        # if things in tree are node_data not actual nodes
 
     def search(self, item):
         queue = []
         next_level_queue = []
-        current_level = 1 #hard coded for now
+        current_level = 1  # hard coded for now
         accesses_made = 0
 
         leaf_nodes = []
@@ -93,33 +95,40 @@ class oblivious_ram(object, total_accesses = 5):
 
         # create list of children nodes to visit
         for st in matching_subtrees:
-            lst_children = self.maintree.subtrees[st].get_children(1) # root is always node 1
+            lst_children = self.maintree.subtrees[st].get_children(1)  # root is always node 1
             for child in lst_children:
                 queue.append((st, child.identifier))
-        
+
         rest = self.total_accesses - len(queue)
-        queue += [(0,2**current_level)] * rest #TODO: check indexing 
-        assert(len(queue) == self.total_accesses)
+        if(rest<0):
+            queue = queue[:self.total_accesses]
+        else:
+            queue += [(0, 2 ** current_level)] * rest
+        print(str(queue)+", "+str(rest))
+        assert (len(queue) == self.total_accesses)
 
         while queue != []:
             current_node = queue.pop(0)
-            print(current_node)
-            accesses_made += 1 
+            accesses_made += 1
             tree, node = current_node[0], current_node[1]
+            print(current_node)
+            print(type(current_node))
             current_item = hashes[tree]
+            print(current_item)
 
             original_node_data = self.retrieve_data(tree, current_level, node)
-
+            print(current_level)
+            print(self.maintree.depth)
             if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 
                 if lst_children != []:
                     for child in lst_children:
-                        if (tree,child) not in next_level_queue: 
+                        if (tree, child) not in next_level_queue:
                             next_level_queue.append((tree, child))
 
             elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
-                if current_node not in leaf_nodes: 
+                if current_node not in leaf_nodes:
                     # print("Current item", current_item)
                     # print("original node", original_node_data)
                     # print("current node:", current_node)
@@ -128,20 +137,20 @@ class oblivious_ram(object, total_accesses = 5):
                     leaf_nodes.append(current_node)
 
             # if num accesses == total accesses , break loop 
-            if accesses_made == self.total_accesses: 
-                queue = [] 
+            if accesses_made == self.total_accesses:
+                queue = []
 
             if queue == [] and current_level < self.maintree.depth:
-                accesses_made = 0 
+                accesses_made = 0
                 current_level += 1
                 rest = self.total_accesses - len(next_level_queue)
-                next_level_queue += [(0,2**current_level)]*rest #TODO: check indexing 
-                assert(len(next_level_queue) == self.total_accesses)
+                if (rest < 0):
+                    next_level_queue= next_level_queue[:self.total_accesses]
+                else:
+                    next_level_queue += [(0, 2 ** current_level)] * rest
+                assert (len(next_level_queue) == self.total_accesses)
                 queue = next_level_queue
                 next_level_queue = []
-
-
-
 
         # retrieve irises corresponding to returned leaf nodes
         irises = []
@@ -157,7 +166,7 @@ class oblivious_ram(object, total_accesses = 5):
         for st_id in range(len(self.subtrees)):
             st = self.subtrees[st_id]
 
-            for node_id in range(st.root, st.num_nodes+1):
+            for node_id in range(st.root, st.num_nodes + 1):
                 if node_id == st.root:
                     self.root.append(node_id)
                 else:
@@ -173,7 +182,7 @@ class oblivious_ram(object, total_accesses = 5):
                     blocks_list = self.create_blocks(pickled_node)
 
                     for block in blocks_list:
-                        nodes_map[depth-1].append((st_id, node_id, [block]))
+                        nodes_map[depth - 1].append((st_id, node_id, [block]))
 
         return nodes_map
 
@@ -202,9 +211,7 @@ class oblivious_ram(object, total_accesses = 5):
                         self.oram_map[st_id][node_id].append(block_id)
                         block_id = block_id + 1
 
-
-
-    def apply(self, main_tree, block_size=256): 
+    def apply(self, main_tree, block_size=256):
         self.maintree = main_tree
         self.subtrees = main_tree.subtrees
         client_map = self.init_maps()

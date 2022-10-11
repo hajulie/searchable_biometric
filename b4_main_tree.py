@@ -16,7 +16,7 @@ from b4_subtree import subtree
 import b4_oram
 
 import multiprocessing as mp
-# from joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 
 storage_name = "heap.bin"

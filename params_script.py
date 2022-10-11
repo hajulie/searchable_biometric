@@ -115,7 +115,7 @@ if __name__ == '__main__':
     parser.add_argument('--db_size', help="Number of records stored in the database", type=int, default=1000000)
     parser.add_argument('--n', help="Feature vectors size in bits", type=int, default=1024)
     parser.add_argument('--sys_tpr', help="Desired system True Positive Rate (TPR)", type=float, default=0.95)
-    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.00001)
+    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.01)
     parser.add_argument('--bf_fpr', help="Bloom Filter FPR", type=float, default=0.0001)
     # parser.add_argument('--lsh_r', help="LSH r param", type=float, default=0.3)
     # parser.add_argument('--lsh_c', help="LSH c param", type=float, default=0.0001)

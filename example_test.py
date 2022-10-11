@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
     print("\n --------------- TEST ORAM --------------- \n")
 
-    storage_t = oblivious_ram()
+    storage_t = oblivious_ram(total_accesses=6)
     print("Storing the database")
     storage_t.apply(t)
 
