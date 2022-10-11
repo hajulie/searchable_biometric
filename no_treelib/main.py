@@ -16,7 +16,7 @@ from b4_subtree import subtree
 import b4_oram
 
 import multiprocessing as mp
-# from joblib import Parallel, delayed
+from joblib import Parallel, delayed
 
 
 storage_name = "heap.bin"
@@ -76,8 +76,6 @@ class main_tree(object):
 
         self.eLSH = eLSH_import.eLSH(LSH, self.n, self.r, self.c, self.s, self.l)
         self.lsh = self.eLSH.hashes
-        # print("self.eyes", self.eyes)
-        self.compute_eLSH(self.eyes)
 
         # print("Processes: " + str(mp.cpu_count()))
         if parallel:
@@ -131,21 +129,6 @@ class main_tree(object):
             returned_iris.append(self.hash_to_iris[str(h)])
 
         return returned_iris, leaf_nodes, nodes_visited, access_depth
-
-    """functions for oram search """
-
-    # checks root of specified subtree
-    def check_subtree_root(self, subtree_num, item):
-        return self.subtrees[subtree_num].check_root(item)
-
-    # returns a node based on tree identifier specifcation
-    def return_tree_node(self, subtree_num, node):
-        return self.subtrees[subtree_num].get_node(node)
-
-
-"""
-str_data : the data in form of list of strings 
-"""
 
 
 def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000, parallel=False):

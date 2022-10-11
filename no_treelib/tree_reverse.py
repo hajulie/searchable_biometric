@@ -11,15 +11,20 @@ from Crypto.Util.Padding import pad, unpad
 
 class Node(object): 
     
-    def __init__(self, identifier, parent, depth, bloom_filter=None):
+    def __init__(self, identifier, depth, bloom_filter=None):
         self.identifier = identifier
-        self.parent = parent
+        self.parent = None
         self.children = []
         self.depth = depth
 
         self.bloom_filter = bloom_filter
-        self.items = [] #for testing 
-        self.irises = [] 
+        self.items = [] 
+        self.iris = []
+        self.leaf_hash = None
+
+    @staticmethod
+    def create_node(identifier, depth): 
+        return Node(identifier, depth)
 
     def get_children(self):
         return self.children
@@ -33,12 +38,22 @@ class Node(object):
     def get_depth(self): 
         return self.depth
 
+    def get_items(self):
+        return self.items
+
     def is_leaf(self): 
         return self.children == []
 
-    def return_irises(self): #returns irises of leaves 
+    def set_leaf(self, iris_object, _hash): 
+        self.iris.append(iris_object)
+        self.leaf_hash = _hash
+
+    def get_irises(self): #returns irises of leaves 
         if self.is_leaf():
             return self.irises
+
+    def set_bloomfilter(self, bf): 
+        self.bloom_filter = bf
 
     def get_hash(self):
         if self.is_leaf():
@@ -49,6 +64,7 @@ class Node(object):
     def add_item(self, lsh_output, original=None): 
         # item should be an LSH output, while original is optional for testing 
         self.bloom_filter.add(str(lsh_output))
+        self.items.append(lsh_output)
         if original != None: 
             self.items.append(original) 
 
@@ -61,6 +77,9 @@ class Node(object):
 
     def add_child(self, child): 
         self.children.append(child)
+
+    def set_parent(self, parent):
+        self.parent = parent 
 
     def in_bloomfilter(self, item):
         if type(item) == str: 
@@ -126,28 +145,25 @@ class SubTree(object):
             res.append(j.hash(item))
         return res
 
-    def new_node(self, current, parent, depth, num_expected_elements=0, elements=None): 
-        self.num_nodes += 1
-        if current == self.root:
-            bf = BloomFilter(max_elements=num_expected_elements*(self.l), error_rate=self.error_rate)
-            _node_ = Node(current, parent, depth, bloom_filter=bf)
-            _node_.add_multiple(elements)
-            self.nodes[current] = _node_ 
-        elif elements != None: 
-            bf = BloomFilter(max_elements=num_expected_elements*(self.l), error_rate=self.error_rate)
-            _node_ = Node(current, parent, depth, bloom_filter=bf)
-            _node_.add_multiple(elements)
-            self.add_child_to_node(parent, current)
-            self.nodes[current] = _node_ 
-        else: 
-            self.add_child_to_node(parent, current)
-            _node_ = Node(current, parent, depth)
-
-    def new_node(self, current, num_elements, elements=None): 
+    def new_node(self, identifier, node_depth, lst_elements, iris_object=None): 
         self.num_nodes += 1 
-        bf = BloomFilter(max_elements=num_elements, error_rate=self.error_rate)
-        _node_ = Node(current )
+        _node_ = Node(identifier, node_depth)
+        if iris_object != None: #is leaf node 
+            assert(len(lst_elements) == 1)
+            _node_.set_leaf(iris_object, lst_elements[0])
+        else: 
+            num_elements = len(lst_elements)
+            bf = BloomFilter(max_elements=num_elements, error_rate=self.error_rate)
+            _node_.set_bloomfilter(bf)
+            _node_.add_multiple(lst_elements)
 
+        self.nodes[identifier] = _node_
+
+    def set_relations(self, child1, child2, parent): 
+        parent.add_child(child1)
+        parent.add_child(child2)
+        child1.set_parent(parent)
+        child2.set_parent(parent)
 
     def build_tree(self, elements): # builds tree in reverse level order 
         # elements are Iris objects, not hashes. 
@@ -155,56 +171,34 @@ class SubTree(object):
         self.calculate_max_elem(num_elements)
 
         queue = [] 
+        queue2 = []
+        node_identifier = 0
+        node_depth = self.depth
 
         for iris in elements: 
             hashes = self.calculate_LSH(iris.vector)
-            self.new_node(current, parent, depth)
+            print('HASHES', hashes) #TESTPRINT
+            for h in hashes: 
+                node_identifier += 1 
+                _node = self.new_node(node_identifier, node_depth, [h], iris_object=iris)
+                queue.append(_node)
 
+        node_depth -= 1 
+        while queue != []: 
+            node_identifier += 1 
+            child1, child2 = queue.pop(0), queue.pop(0)
+            lst_elements = child1.get_items() + child2.get_items()
+            new_node = self.new_node(node_identifier, node_depth, lst_elements)
+            self.set_relations(child1, child2, new_node)
+            queue2.append(new_node)
 
-
-    def build_tree(self, elements):
-        # elements should be the list of original irises, NOT hashes 
-        num_elements = len(elements)
-
-        self.calculate_max_elem(num_elements)
-        hashes = [self.calculate_LSH(i.vector) for i in elements]
-        
-        # initialize root node 
-        self.new_node(self.root, None, 0, num_elements, hashes)
-
-        current_node = self.root
-
-        level = 0 
-        while level != self.depth: 
-            level += 1 
-            nodes_in_level = self.branching_factor**level
-            items_in_filter = self.branching_factor**(self.depth-level)
-
-            if level == self.depth: # last level, leaf nodes 
-                for n in range(nodes_in_level):
-                    current_node += 1
-                    if current_node % self.branching_factor == 0 :
-                        parent_node += 1
-
-                    if n < self.l : 
-                        self.new_node(current_node, parent_node, level, 1, hashes[n])
-                    else: 
-                        self.new_node(current_node, parent_node, level)
-            
-            else: 
-                for n in range(nodes_in_level):
-                    current_node += 1
-                    if current_node % self.branching_factor == 0: 
-                        parent_node += 1
-
-                    begin = n*items_in_filter
-                    end = (n*items_in_filter) + items_in_filter
-                    hashes_in_filter = hashes[begin:end]
-
-                    if hashes_in_filter == []:
-                        self.new_node(current_node, parent_node, level)
-                    else: 
-                        self.new_node(current_node, parent_node, level, num_expected_elements=items_in_filter, elements=hashes_in_filter)
+            if queue == []: 
+                if len(queue2) == 1: # reached root node 
+                    queue = [] 
+                else: 
+                    queue = queue2
+                    queue2 = []
+                node_depth -= 1 
 
     def search(self, item): 
         stack = []

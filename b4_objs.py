@@ -14,6 +14,7 @@ class node_data(object):
         self.children = children
 
     def __reduce__(self):
+        # TODO: make sure this puts items in conditional on being in the leaf level 
         return self.__class__, (self.bloom_filter, self.children)
     
     def add_item(self, item):
@@ -39,6 +40,8 @@ class node_data(object):
     
     # def add_iris(self, iris):
     #     self.irises.append(iris)
+
+
 
 
 class Iris(object): 
