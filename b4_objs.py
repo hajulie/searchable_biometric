@@ -20,7 +20,9 @@ class node_data(object):
     def add_item(self, item):
         self.bloom_filter.add(str(item))
 
-    def add_multiple(self, items): 
+    def add_multiple(self, items):
+        if items is None or len(items) == 0:
+            return
         if type(items[0]) == list:
             for i in items:
                 self.add_item(i) 

@@ -18,10 +18,11 @@ storage_name = "heap.bin"
 
 
 class subtree(object):
-    def __init__(self, identifier, branching_f, error_rate, lsh):
+    def __init__(self, identifier, branching_f, error_rate, lsh, vector_length):
         self.identifier = identifier
         self.lsh = lsh
         self.l = len(lsh)
+        self.vector_length = vector_length
         self.branching_factor = branching_f
         self.error_rate = error_rate
         self.num_nodes = 0
@@ -34,8 +35,8 @@ class subtree(object):
         self.levels = {}
 
     @staticmethod
-    def create_subtree(id, branching_factor, error_rate, lsh, elements):
-        st = subtree(id, branching_factor, error_rate, lsh)
+    def create_subtree(id, branching_factor, error_rate, lsh, elements, vector_length):
+        st = subtree(id, branching_factor, error_rate, lsh, vector_length)
         st.build_tree(elements)
         return st
 
@@ -118,11 +119,12 @@ class subtree(object):
             _node_ = node_data(bloom_filter=bf, children=[])
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
-
-        elif elements != None:
+        else:
             if leaf:
-                _node_ = elements
-
+                if elements is not None:
+                    _node_ = elements
+                else:
+                    _node_ = [(self.vector_length-1, 2)]*self.l
             else:
                 bf = BloomFilter(max_elements=(self.l * num_expected_elements), error_rate=self.error_rate)
                 _node_ = node_data(bloom_filter=bf, children=[])
@@ -130,9 +132,6 @@ class subtree(object):
             self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
 
-        else:
-            self.add_child(parent_node, current_node)
-            self.tree.create_node(str(current_node), current_node, data=None, parent=parent_node)
 
     def build_tree(self, og_elements):
         self.tree = Tree()
@@ -164,7 +163,7 @@ class subtree(object):
                     if n < num_elements:
                         self.new_node(current_node, parent_node, num_expected_elements=1, elements=elements[n], leaf=True)
                     else:
-                        self.new_node(current_node, parent_node)
+                        self.new_node(current_node, parent_node, num_expected_elements=1, elements=None, leaf=True)
 
             else:
                 for n in range(nodes_in_level):
@@ -175,11 +174,7 @@ class subtree(object):
                     begin = n * items_in_filter
                     end = (n * items_in_filter) + items_in_filter
                     elements_in_filter = elements[begin:end]
-
-                    if elements_in_filter == []:
-                        self.new_node(current_node, parent_node)
-                    else:
-                        self.new_node(current_node, parent_node, num_expected_elements=items_in_filter, elements=elements_in_filter)
+                    self.new_node(current_node, parent_node, num_expected_elements=items_in_filter, elements=elements_in_filter)
 
     def search(self, item):
         depth = self.tree.depth()

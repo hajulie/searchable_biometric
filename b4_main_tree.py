@@ -82,14 +82,15 @@ class main_tree(object):
         # print("Processes: " + str(mp.cpu_count()))
         if parallel:
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
-                delayed(subtree.create_subtree)(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes)
+                delayed(subtree.create_subtree)(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes, self.n)
                 for h in range(self.l))
-
+            for subtree_iter in self.subtrees:
+                print("total depth "+str(subtree_iter.depth))
             self.total_nodes = sum([st.num_nodes for st in self.subtrees])
 
         else:
             for h in range(self.l):
-                st = subtree.create_subtree(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes)
+                st = subtree.create_subtree(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes, self.n)
                 # st.show_tree()
                 self.subtrees[h] = st
                 self.total_nodes += st.num_nodes
@@ -141,6 +142,7 @@ class main_tree(object):
     # returns a node based on tree identifier specifcation
     def return_tree_node(self, subtree_num, node):
         return self.subtrees[subtree_num].get_node(node)
+
 
 
 """

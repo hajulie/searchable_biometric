@@ -100,11 +100,11 @@ class oblivious_ram(object):
                 queue.append((st, child.identifier))
 
         rest = self.total_accesses - len(queue)
-        if(rest<0):
+        if (rest < 0):
             queue = queue[:self.total_accesses]
         else:
             queue += [(0, 2 ** current_level)] * rest
-        print(str(queue)+", "+str(rest))
+        print(str(queue) + ", " + str(rest))
         assert (len(queue) == self.total_accesses)
 
         while queue != []:
@@ -117,8 +117,12 @@ class oblivious_ram(object):
             print(current_item)
 
             original_node_data = self.retrieve_data(tree, current_level, node)
+            if (original_node_data is None):
+                print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
             print(current_level)
             print(self.maintree.depth)
+            print("Original Node "+str(original_node_data))
+            print("Current item "+str(current_item))
             if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 
@@ -145,7 +149,7 @@ class oblivious_ram(object):
                 current_level += 1
                 rest = self.total_accesses - len(next_level_queue)
                 if (rest < 0):
-                    next_level_queue= next_level_queue[:self.total_accesses]
+                    next_level_queue = next_level_queue[:self.total_accesses]
                 else:
                     next_level_queue += [(0, 2 ** current_level)] * rest
                 assert (len(next_level_queue) == self.total_accesses)
@@ -162,7 +166,6 @@ class oblivious_ram(object):
 
     def init_maps(self):
         nodes_map = []
-
         for st_id in range(len(self.subtrees)):
             st = self.subtrees[st_id]
 
@@ -172,6 +175,12 @@ class oblivious_ram(object):
                 else:
                     # serialize node data
                     current_node = st.get_node_data(node_id)
+
+                    if current_node is None:
+                        raise ValueError("Cannot serialize empty node")
+                        #default node that doesn't match anything
+                        #current_node =
+                    #print(current_node)
                     pickled_node = pickle.dumps(current_node)
                     depth = st.get_depth(node_id)
 
@@ -183,7 +192,6 @@ class oblivious_ram(object):
 
                     for block in blocks_list:
                         nodes_map[depth - 1].append((st_id, node_id, [block]))
-
         return nodes_map
 
     def build_oram(self, nodes_map):
@@ -214,5 +222,6 @@ class oblivious_ram(object):
     def apply(self, main_tree, block_size=256):
         self.maintree = main_tree
         self.subtrees = main_tree.subtrees
+
         client_map = self.init_maps()
         self.build_oram(client_map)

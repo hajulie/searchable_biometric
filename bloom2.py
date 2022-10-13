@@ -134,8 +134,8 @@ class bftree(object):
                         # f = self.add_with_eLSH(bf, current_elsh, elements_in_filter)
                         f = self.add_to_filter(bf, elements_in_filter)
                         self.tree.create_node(str(current_node), current_node, data=f, parent=parent_node)
-
-        return self.tree
+            print("depth is "+str(self.depth))
+            return self.tree
 
     def tree_to_arr(self): 
         arr_nodes = self.tree.all_nodes()

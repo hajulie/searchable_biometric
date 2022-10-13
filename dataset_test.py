@@ -245,7 +245,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        ND_tree, data = build_db(branching_factor, bf_fpr, ND_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        ND_tree, data = build_db(branching_factor, bf_fpr, ND_data, n, lsh_r, lsh_c, lsh_size, k)
         print("total nodes = " + str(ND_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
