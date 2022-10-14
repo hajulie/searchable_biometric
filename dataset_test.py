@@ -9,6 +9,9 @@ import math
 import time
 import argparse
 
+from scipy import stats
+import matplotlib.pyplot as plt
+
 
 def compare_vectors(v1, v2):
     for i in range(len(v1)):
@@ -120,10 +123,15 @@ def compute_sys_rates(tree, queries, parallel):
     true_pos = 0
     false_pos = []
     visited_nodes = []
+    nb_matching_roots = []
 
     # run queries on whole dataset
     for i in range(len(queries)):
         # false_pos = 0
+
+        matching_roots = tree.maintree.search_root_nodes(queries[i])
+        print("Matching root nodes = " + str(matching_roots))
+        nb_matching_roots.append(len(matching_roots))
 
         leaves_match = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
@@ -151,15 +159,24 @@ def compute_sys_rates(tree, queries, parallel):
 
     print("True positives = " + str(true_pos))
     print("False positives: " + str(false_pos))
-    print("Nodes visited: " + str(visited_nodes))
+    # print("Nodes visited: " + str(visited_nodes))
     print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
 
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
 
-    return tpr, fpr
+    return tpr, fpr, nb_matching_roots
 
+
+def plot_matching_roots(root_matches):
+    dist = stats.binom
+    bounds = [(0, 10), (0, 10)]
+    res = stats.fit(dist, root_matches, bounds)
+    print(res.params)
+
+    res.plot()
+    plt.show()
 
 if __name__ == '__main__':
     print(sys.version)
@@ -192,9 +209,9 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
-        # lsh_size=5
-        k = args.nb_trees
-
+        lsh_size = 7
+        # k = args.nb_trees
+        l = 100
         # t=0
         # oram = False
 
@@ -224,7 +241,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr) = compute_sys_rates(random_tree, random_queries, parallel)
+        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries, parallel)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -236,6 +253,10 @@ if __name__ == '__main__':
         print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
         print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
+        print("Random dataset/queries : avg number of root matches " + str(sum(root_matches)/len(root_matches)))
+
+        # plot number of matching root nodes + binomial fit
+        plot_matching_roots(root_matches)
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
