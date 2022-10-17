@@ -1,6 +1,6 @@
 from Crypto.Util.Padding import pad, unpad
 import pickle
-import math, os, sys
+import math, os, sys, time
 # from memory_profiler import profile
 
 import pyoram
@@ -28,6 +28,12 @@ class oblivious_ram(object):
         self.leaf_nodes = None
         self.tmp_map = []
         self.total_accesses = total_accesses
+
+        # for benchmarking purposes
+        self.nb_oram_access = 0
+        self.time_oram_access = 0
+        self.time_root_search = 0
+
 
     def check_hash_to_iris(self, h):
         current_map = self.maintree.hash_to_iris
@@ -62,9 +68,14 @@ class oblivious_ram(object):
             current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash,
                                          current_oram.position_map, key=current_oram.key, storage_type='file')
             blocks_pos = current_oram_map[node]
+            t_start = time.time()
 
             for pos in blocks_pos:
                 raw_data.append(current_oram_file.read_block(pos))
+                self.nb_oram_access += 1
+
+            t_end = time.time()
+            self.time_oram_access += t_end-t_start
 
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
             orig = pickle.loads(rebuilt_node)
@@ -91,7 +102,10 @@ class oblivious_ram(object):
         hashes = self.maintree.eLSH.hash(item[0].vector)
 
         # get matching root nodes
+        t_start = time.time()
         matching_subtrees = self.maintree.search_root_nodes(item[0].vector)
+        t_end = time.time()
+        self.time_root_search += t_end - t_start
 
         # create list of children nodes to visit
         for st in matching_subtrees:

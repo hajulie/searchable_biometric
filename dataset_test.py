@@ -164,6 +164,10 @@ def compute_sys_rates(tree, queries, parallel):
     print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
 
+    print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
+    print("Avg time ORAM access = " + str((tree.time_oram_access/tree.nb_oram_access)/len(queries)))
+    print("Avg time root search = " + str(tree.time_root_search/len(queries)))
+
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
 
@@ -212,9 +216,9 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
-        lsh_size = 7
-        # k = args.nb_trees
-        l = 100
+        # lsh_size = 10
+        # k = 100
+        # l = 50
         # t=0
         # oram = False
 
