@@ -128,11 +128,12 @@ def compute_sys_rates(tree, queries, parallel):
         leaves_match = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
-        print(leaves_match)
+        #print(leaves_match)
         if len(leaves_match) > 2:
             visited_nodes.append(len(leaves_match[2]))
 
-        print("query = " + str(i))
+        if i%10 == 0:
+            print("query = " + str(i))
         #print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
         #print(leaves_match)
 
@@ -170,8 +171,9 @@ if __name__ == '__main__':
     parser.add_argument('--oram_dir', help="Directory fo ORAM files storage.", type=str, default="")
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
-    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=10)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int, default=100)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     args = parser.parse_args()
@@ -183,6 +185,7 @@ if __name__ == '__main__':
     k = args.nb_trees  # number of trees to build
     n = 1024  # vector size
     t = args.same_t
+    accesses = args.oram_constant_accesses
 
     branching_factor = 2
     bf_fpr = 0.0001  # Bloom Filter FPR (same for every BFs for now)
@@ -215,7 +218,7 @@ if __name__ == '__main__':
         t_start = time.time()
         if oram:
             print("Building ORAM...")
-            storage_t = oblivious_ram(args.oram_dir)
+            storage_t = oblivious_ram(files_dir=args.oram_dir, total_accesses=accesses)
             print("ORAM created, now putting tree in it...")
             storage_t.apply(random_tree)
             print("ORAM finished.")
@@ -258,7 +261,7 @@ if __name__ == '__main__':
 
         t_start = time.time()
         if oram:
-            storage_t = oblivious_ram(total_accesses=18)
+            storage_t = oblivious_ram(files_dir=args.oram_dir, total_accesses=accesses)
             storage_t.apply(ND_tree)
             ND_tree = storage_t
         t_end = time.time()
@@ -294,7 +297,7 @@ if __name__ == '__main__':
 
         t_start = time.time()
         if oram:
-            storage_t = oblivious_ram()
+            storage_t = oblivious_ram(files_dir=args.oram_dir, total_accesses=accesses)
             storage_t.apply(synth_tree)
             synth_tree = storage_t
         t_end = time.time()

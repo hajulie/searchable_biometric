@@ -104,25 +104,26 @@ class oblivious_ram(object):
             queue = queue[:self.total_accesses]
         else:
             queue += [(0, 2 ** current_level)] * rest
-        print(str(queue) + ", " + str(rest))
+        #print(str(queue) + ", " + str(rest))
         assert (len(queue) == self.total_accesses)
 
         while queue != []:
             current_node = queue.pop(0)
             accesses_made += 1
             tree, node = current_node[0], current_node[1]
-            print(current_node)
-            print(type(current_node))
+            # print(current_node)
+            # print(type(current_node))
             current_item = hashes[tree]
-            print(current_item)
+            # print(current_item)
 
             original_node_data = self.retrieve_data(tree, current_level, node)
             if (original_node_data is None):
                 print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
-            print(current_level)
-            print(self.maintree.depth)
-            print("Original Node "+str(original_node_data))
-            print("Current item "+str(current_item))
+                exit(1)
+            # print(current_level)
+            # print(self.maintree.depth)
+            # print("Original Node "+str(original_node_data))
+            # print("Current item "+str(current_item))
             if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 
