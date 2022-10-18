@@ -144,6 +144,9 @@ def compute_sys_rates(tree, queries, parallel):
             print("query = " + str(i))
             print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
             print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
+            print("#ORAM accesses per query = " + str(tree.nb_oram_access / len(queries)))
+            print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / len(queries)))
+            print("Avg time root search = " + str(tree.time_root_search / len(queries)))
         #print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
         #print(leaves_match)
 
