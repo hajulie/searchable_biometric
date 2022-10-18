@@ -68,7 +68,7 @@ class main_tree(object):
             self.compute_eLSH_one(i)
 
     # TREE SPECIFIC FUNCS
-    def build_index(self, elements, parallel=False):
+    def build_index(self, elements, _false_pos_internal, parallel=False):
         num_elements = len(elements)
         level = 0  # levels increase going down
 
@@ -82,7 +82,7 @@ class main_tree(object):
         # print("Processes: " + str(mp.cpu_count()))
         if parallel:
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
-                delayed(subtree.create_subtree)(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes, self.n)
+                delayed(subtree.create_subtree)(h, self.branching_factor, _false_pos_internal, self.lsh[h], self.eyes, self.n)
                 for h in range(self.l))
             # for subtree_iter in self.subtrees:
             #     print("total depth "+str(subtree_iter.depth))
@@ -90,7 +90,7 @@ class main_tree(object):
 
         else:
             for h in range(self.l):
-                st = subtree.create_subtree(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes, self.n)
+                st = subtree.create_subtree(h, self.branching_factor, _false_pos_internal, self.lsh[h], self.eyes, self.n)
                 # st.show_tree()
                 self.subtrees[h] = st
                 self.total_nodes += st.num_nodes
@@ -150,11 +150,11 @@ str_data : the data in form of list of strings
 """
 
 
-def build_db(_branching_factor, _false_pos, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000, parallel=False):
+def build_db(_branching_factor, _false_pos_root, _false_pos_internal, vector_data, n=1024, r=307, c=0.5 * (1024 / 307), s=12, l=1000, parallel=False):
     # converts irises in vector form to iris object
     data = to_iris(vector_data)
 
-    t = main_tree(_branching_factor, _false_pos, n=n, r=r, c=c, s=s, l=l)
-    t.build_index(data, parallel)
+    t = main_tree(_branching_factor, _false_pos_root, n=n, r=r, c=c, s=s, l=l)
+    t.build_index(data, _false_pos_internal, parallel)
 
     return t, data

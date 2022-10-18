@@ -142,11 +142,10 @@ def compute_sys_rates(tree, queries, parallel):
 
         if i%10 == 0:
             print("query = " + str(i))
-            print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
-            print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
-            print("#ORAM accesses per query = " + str(tree.nb_oram_access / len(queries)))
-            print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / len(queries)))
-            print("Avg time root search = " + str(tree.time_root_search / len(queries)))
+            print("Avg root node matchies per query = "+str(sum(nb_matching_roots) / i))
+            print("#ORAM accesses per query = " + str(tree.nb_oram_access / i))
+            print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / i))
+            print("Avg time root search = " + str(tree.time_root_search / i))
         #print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
         #print(leaves_match)
 
@@ -199,6 +198,8 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
     parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
+    parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int, default=100)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
@@ -214,7 +215,8 @@ if __name__ == '__main__':
     accesses = args.oram_constant_accesses
 
     branching_factor = 2
-    bf_fpr = 0.0001  # Bloom Filter FPR (same for every BFs for now)
+    root_bf_fpr = args.root_bf_fp
+    internal_bf_fpr = args.internal_bf_fp
     lsh_size = args.lsh_size  # LSH output size
     lsh_r = math.floor(t * n)
     lsh_c = args.diff_t * (n / lsh_r)
@@ -233,7 +235,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        random_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -278,7 +280,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        ND_tree, data = build_db(branching_factor, bf_fpr, ND_data, n, lsh_r, lsh_c, lsh_size, k)
+        ND_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr, ND_data, n, lsh_r, lsh_c, lsh_size, k)
         print("total nodes = " + str(ND_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -320,7 +322,7 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        synth_tree, data = build_db(branching_factor, bf_fpr, synthetic_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        synth_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr,  synthetic_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
         print("total nodes = " + str(synth_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
