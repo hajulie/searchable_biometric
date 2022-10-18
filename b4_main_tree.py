@@ -84,8 +84,8 @@ class main_tree(object):
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
                 delayed(subtree.create_subtree)(h, self.branching_factor, self.error_rate, self.lsh[h], self.eyes, self.n)
                 for h in range(self.l))
-            for subtree_iter in self.subtrees:
-                print("total depth "+str(subtree_iter.depth))
+            # for subtree_iter in self.subtrees:
+            #     print("total depth "+str(subtree_iter.depth))
             self.total_nodes = sum([st.num_nodes for st in self.subtrees])
 
         else:

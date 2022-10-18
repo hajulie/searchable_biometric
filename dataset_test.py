@@ -142,6 +142,8 @@ def compute_sys_rates(tree, queries, parallel):
 
         if i%10 == 0:
             print("query = " + str(i))
+            print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
+            print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
         #print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
         #print(leaves_match)
 
