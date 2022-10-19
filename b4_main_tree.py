@@ -51,6 +51,7 @@ class main_tree(object):
 
     def put_elements_map(self, element, output):  # puts elements in hash_to_iris
         for index, h in enumerate(output):
+            h.sort(key = lambda x: x[0])
             if str(h) in self.hash_to_iris:
                 self.hash_to_iris[str(h)] += [element]
             else:
@@ -129,6 +130,7 @@ class main_tree(object):
 
         # print("here h ", self.hash_to_iris)
         for h in returned_hashes:
+            LSH.sortLSH(h)
             returned_iris.append(self.hash_to_iris[str(h)])
 
         return returned_iris, leaf_nodes, nodes_visited, access_depth

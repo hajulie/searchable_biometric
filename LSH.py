@@ -33,6 +33,10 @@ class LSH:
         return LSH(n, r, c, i)
 
     @staticmethod
+    def sortLSH(hash):
+        hash.sort(key = lambda x: x[0])
+
+    @staticmethod
     def compareLSH(hash1, hash2):
         bits_match = 0
         for p1, b1 in hash1:
