@@ -34,10 +34,17 @@ class oblivious_ram(object):
         self.time_oram_access = 0
         self.time_root_search = 0
 
-
     def check_hash_to_iris(self, h):
         current_map = self.maintree.hash_to_iris
-        return current_map[str(h)]
+        LSH.sortLSH(h)
+        try:
+            iris = current_map[str(h)]
+            # print(iris)
+            # print(h)
+            return iris
+        except KeyError:
+            print("Was not able to find a corresponding iris for "+str(h))
+            return None
 
     def padding(self, item):
         if len(item) == self.block_size:
@@ -75,7 +82,7 @@ class oblivious_ram(object):
                 self.nb_oram_access += 1
 
             t_end = time.time()
-            self.time_oram_access += t_end-t_start
+            self.time_oram_access += t_end - t_start
 
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
             orig = pickle.loads(rebuilt_node)
@@ -118,7 +125,7 @@ class oblivious_ram(object):
             queue = queue[:self.total_accesses]
         else:
             queue += [(0, 2 ** current_level)] * rest
-        #print(str(queue) + ", " + str(rest))
+        # print(str(queue) + ", " + str(rest))
         assert (len(queue) == self.total_accesses)
 
         while queue != []:
@@ -148,11 +155,11 @@ class oblivious_ram(object):
 
             elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
                 if current_node not in leaf_nodes:
-                    # print("Current item", current_item)
-                    # print("original node", original_node_data)
+                    #print("Current item", current_item)
+                    #print("original node", original_node_data)
                     # print("current node:", current_node)
                     # print("leaf nodes", leaf_nodes)
-                    hashes.append(current_item)
+                    hashes.append(original_node_data)
                     leaf_nodes.append(current_node)
 
             # if num accesses == total accesses , break loop 
@@ -163,7 +170,7 @@ class oblivious_ram(object):
                 accesses_made = 0
                 current_level += 1
                 rest = self.total_accesses - len(next_level_queue)
-                if (rest < 0):
+                if rest < 0:
                     next_level_queue = next_level_queue[:self.total_accesses]
                 else:
                     next_level_queue += [(0, 2 ** current_level)] * rest
@@ -173,9 +180,10 @@ class oblivious_ram(object):
 
         # retrieve irises corresponding to returned leaf nodes
         irises = []
-        # for i in hashes:
-        #     returned_irises = self.check_hash_to_iris(i)
-        #     irises.append(returned_irises)
+        for i in hashes:
+            returned_irises = self.check_hash_to_iris(i)
+            if returned_irises is not None:
+                irises.append(str(returned_irises))
 
         return irises, leaf_nodes, [], []
 
@@ -193,9 +201,9 @@ class oblivious_ram(object):
 
                     if current_node is None:
                         raise ValueError("Cannot serialize empty node")
-                        #default node that doesn't match anything
-                        #current_node =
-                    #print(current_node)
+                        # default node that doesn't match anything
+                        # current_node =
+                    # print(current_node)
                     pickled_node = pickle.dumps(current_node)
                     depth = st.get_depth(node_id)
 

@@ -130,17 +130,17 @@ def compute_sys_rates(tree, queries, parallel):
         # false_pos = 0
 
         matching_roots = tree.maintree.search_root_nodes(queries[i])
-        print("Matching root nodes = " + str(matching_roots))
+        #print("Matching root nodes = " + str(matching_roots))
         nb_matching_roots.append(len(matching_roots))
 
         leaves_match = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
-        #print(leaves_match)
+        #print(leaves_match[1])
         if len(leaves_match) > 2:
             visited_nodes.append(len(leaves_match[2]))
 
-        if i%10 == 0:
+        if i % 10 == 0 and i > 0:
             print("query = " + str(i))
             print("Avg root node matchies per query = "+str(sum(nb_matching_roots) / i))
             print("#ORAM accesses per query = " + str(tree.nb_oram_access / i))
