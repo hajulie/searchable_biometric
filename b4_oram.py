@@ -35,6 +35,9 @@ class oblivious_ram(object):
         self.time_root_search = 0
 
 
+    def search_root_nodes(self, query):
+        return self.maintree.search_root_nodes(query)
+
     def check_hash_to_iris(self, h):
         current_map = self.maintree.hash_to_iris
         return current_map[str(h)]
