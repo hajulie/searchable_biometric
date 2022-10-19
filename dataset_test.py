@@ -119,6 +119,9 @@ def compute_sys_rates(tree, queries, parallel, oram):
     tpr = 0
     fpr = 0
 
+    good_traversals = []
+    bad_traversals = []
+
     leaves = tree.subtrees[0].tree.leaves()
     true_pos = 0
     false_pos = []
@@ -127,49 +130,65 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
     # run queries on whole dataset
     for i in range(len(queries)):
-        # false_pos = 0
-
-
-
         (returned_iris, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
         visited_nodes.append(sum(1 for x in nodes_visited for y in nodes_visited[x]))
         nb_matching_roots.append(num_root_matches)
-        if returned_iris is not None:
-            false_positives = len(returned_iris)
-            for iris in returned_iris:
-                if iris==str(i):
-                    true_pos+=1
-                    false_positives-=1
-                    break
+        res = [item[1] for item in leaf_nodes]
+
+        no_dup_res = list(set(res))
+        if int(leaves[i].tag) in no_dup_res:
+            true_pos = true_pos + 1
+
+            if len(no_dup_res) > 1:
+                false_pos.append(len(no_dup_res) - 1)
+            else:
+                false_pos.append(0)
+        # elif len(no_dup_res) != 0:
         else:
-            false_pos.append(0)
+            false_pos.append(len(no_dup_res))
 
-        if i % 10 == 0 and i > 0:
-            print("query = " + str(i))
-            print("Avg root node matches per query = "+str(sum(nb_matching_roots) / i))
-            if 1==oram:
-                print("ORAM accesses per query = " + str(tree.nb_oram_access / i))
-                print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / i))
-                print("Avg time root search = " + str(tree.time_root_search / i))
-            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
+        # compute number of good & bad traversals (not ignoring duplicates)
+        tmp_good_traversals = 0
+        tmp_bad_traversals = 0
+        for r in res:
+            if int(leaves[i].tag) == r:
+                tmp_good_traversals += 1
 
+        tmp_bad_traversals = num_root_matches - tmp_good_traversals
+        good_traversals.append(tmp_good_traversals)
+        bad_traversals.append(tmp_bad_traversals)
 
+        if 0 == i % 10 and i > 0:
+            print("Query number "+str(i+1)+" of "+str(len(queries)))
+            print("True Positive Rate = "+str(true_pos/(i+1)))
+            print("Avg false positives per query = " + str(sum(false_pos) / (i+1)))
+            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i+1)))
+            print("Max root matches in a query = " + str(max(nb_matching_roots)))
 
+            if oram:
+                print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
+                print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / (i+1)))
+                print("Avg time root search = " + str(tree.time_root_search / (i+1)))
 
-    print("True positives = " + str(true_pos))
-    print("False positives: " + str(false_pos))
+            print("Good traversals = " + str(sum(good_traversals)/(i+1)))
+            print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
+
+    print("True Positive Rate = " + str(true_pos / len(queries)))
+    print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
+    print("Max root matches in a query = " + str(max(nb_matching_roots)))
 
-
-    if oram != 1:
-        pass
-    else:
+    if oram:
         print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
         print("Avg time ORAM access = " + str((tree.time_oram_access/tree.nb_oram_access)/len(queries)))
         print("Avg time root search = " + str(tree.time_root_search/len(queries)))
+
+    print("Good traversals = " + str(good_traversals))
+    print("Bad traversals = " + str(bad_traversals))
+
 
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
@@ -186,6 +205,7 @@ def plot_matching_roots(root_matches):
     res.plot()
     plt.show()
 
+
 if __name__ == '__main__':
     print(sys.version)
 
@@ -195,8 +215,8 @@ if __name__ == '__main__':
     parser.add_argument('--oram_dir', help="Directory fo ORAM files storage.", type=str, default="")
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
     parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
-    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=4000)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=20)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=630)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=15)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int, default=100)
@@ -222,11 +242,6 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
-        # lsh_size = 10
-        # k = 100
-        # l = 50
-        # t=0
-        # oram = False
 
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
@@ -238,9 +253,6 @@ if __name__ == '__main__':
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
-
-        # print("Root nodes lists:")
-        # print(random_tree.search_root_nodes(random_queries))
 
         t_start = time.time()
         if oram:
@@ -264,12 +276,13 @@ if __name__ == '__main__':
         print("Random dataset/queries : FPR = " + str(rand_fpr))
         print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
-        print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
+        if oram:
+            print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
         print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
         print("Random dataset/queries : avg number of root matches " + str(sum(root_matches)/len(root_matches)))
 
         # plot number of matching root nodes + binomial fit
-        plot_matching_roots(root_matches)
+        # plot_matching_roots(root_matches)
 
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
@@ -299,7 +312,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (ND_tpr, ND_fpr) = compute_sys_rates(ND_tree, ND_queries, parallel)
+        (ND_tpr, ND_fpr, root_matches) = compute_sys_rates(ND_tree, ND_queries, parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -335,7 +348,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (mixed_tpr, mixed_fpr) = compute_sys_rates(synth_tree, synthetic_queries, parallel)
+        (mixed_tpr, mixed_fpr, root_matches) = compute_sys_rates(synth_tree, synthetic_queries, parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
