@@ -52,7 +52,7 @@ class Iris(object):
         self.identity = identity
 
     def __repr__(self):
-        return "Iris No " + str(self.identity)
+        return str(self.identity)
     
     def print_vector(self): 
         return str(self.iris)

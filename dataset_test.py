@@ -115,7 +115,7 @@ def build_synthetic_dataset(l, n, t):
 
 # only works if tree leaves order are not randomized !!!!
 
-def compute_sys_rates(tree, queries, parallel):
+def compute_sys_rates(tree, queries, parallel, oram):
     tpr = 0
     fpr = 0
 
@@ -129,48 +129,47 @@ def compute_sys_rates(tree, queries, parallel):
     for i in range(len(queries)):
         # false_pos = 0
 
-        matching_roots = tree.maintree.search_root_nodes(queries[i])
-        #print("Matching root nodes = " + str(matching_roots))
-        nb_matching_roots.append(len(matching_roots))
 
-        leaves_match = tree.search(
+
+        (returned_iris, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
-        #print(leaves_match[1])
-        if len(leaves_match) > 2:
-            visited_nodes.append(len(leaves_match[2]))
+        visited_nodes.append(sum(1 for x in nodes_visited for y in nodes_visited[x]))
+        nb_matching_roots.append(num_root_matches)
+        if returned_iris is not None:
+            false_positives = len(returned_iris)
+            for iris in returned_iris:
+                if iris==str(i):
+                    true_pos+=1
+                    false_positives-=1
+                    break
+        else:
+            false_pos.append(0)
 
         if i % 10 == 0 and i > 0:
             print("query = " + str(i))
-            print("Avg root node matchies per query = "+str(sum(nb_matching_roots) / i))
-            print("#ORAM accesses per query = " + str(tree.nb_oram_access / i))
-            print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / i))
-            print("Avg time root search = " + str(tree.time_root_search / i))
-        #print("result : (returned_iris, leaf_nodes, nodes_visited, access_depth)")
-        #print(leaves_match)
+            print("Avg root node matches per query = "+str(sum(nb_matching_roots) / i))
+            if 1==oram:
+                print("ORAM accesses per query = " + str(tree.nb_oram_access / i))
+                print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / i))
+                print("Avg time root search = " + str(tree.time_root_search / i))
+            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
 
-        # get rid of duplicates in results
-        # res = list(set([item for sublist in leaves_match[1] for item in sublist]))
-        res = list(set([item[1] for item in leaves_match[1]]))
 
-        if int(leaves[i].tag) in res:
-            true_pos = true_pos + 1
-            if len(res) > 1:
-                false_pos.append(len(res) - 1)
-        elif len(res) != 0:
-            false_pos.append(len(res))
 
-        # fpr = fpr + false_pos/len(leaves)
 
     print("True positives = " + str(true_pos))
     print("False positives: " + str(false_pos))
-    # print("Nodes visited: " + str(visited_nodes))
-    print("Avg #false positives per query = " + str(sum(false_pos) / len(queries)))
-    print("Avg #visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
+    print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
+    print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
 
-    print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
-    print("Avg time ORAM access = " + str((tree.time_oram_access/tree.nb_oram_access)/len(queries)))
-    print("Avg time root search = " + str(tree.time_root_search/len(queries)))
+
+    if oram != 1:
+        pass
+    else:
+        print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
+        print("Avg time ORAM access = " + str((tree.time_oram_access/tree.nb_oram_access)/len(queries)))
+        print("Avg time root search = " + str(tree.time_root_search/len(queries)))
 
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
@@ -255,7 +254,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries, parallel)
+        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries, parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 

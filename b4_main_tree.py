@@ -112,27 +112,33 @@ class main_tree(object):
         if type(item) == Iris:
             item = item.vector
 
-        nodes_visited = []
+        nodes_visited = {}
         leaf_nodes = []
         returned_iris = []
         returned_hashes = []
-        access_depth = []  # nodes accessed per depth
+        num_root_matches = 0
+        access_depth = {}  # nodes accessed per depth
 
         for sub_tree in self.subtrees:
             st_nodes, st_leaf, st_access, st_hashes = sub_tree.search(item)
+            if(len(st_access)>1):
+                num_root_matches += 1
+            if(len(st_nodes) >0):
+                nodes_visited[sub_tree.identifier] =st_nodes
 
-            nodes_visited += [st_nodes]
-            leaf_nodes += [st_leaf]
-            access_depth += access_depth
+            leaf_nodes += [(sub_tree.identifier, x) for x in st_leaf]
+            access_depth[sub_tree.identifier] = st_access
 
             for i in st_hashes:
                 returned_hashes.append(i)
 
-        # print("here h ", self.hash_to_iris)
+        irises = set()
         for h in returned_hashes:
-            returned_iris.append(self.hash_to_iris[str(h)])
-
-        return returned_iris, leaf_nodes, nodes_visited, access_depth
+            LSH.sortLSH(h)
+            returned_irises = self.hash_to_iris[str(h)]
+            for iris in returned_irises:
+                irises.add(str(iris))
+        return list(irises), leaf_nodes, nodes_visited, access_depth, num_root_matches
 
     """functions for oram search """
 

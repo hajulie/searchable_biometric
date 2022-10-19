@@ -182,9 +182,10 @@ class subtree(object):
         nodes_visited = []
         leaf_nodes = []
         returned_iris = []
-        access_depth = [[] for i in range(depth + 1)]  # nodes accessed per depth
+        access_depth={}
         root_bf = self.tree[self.root].data
 
+        access_depth[0] = []
         access_depth[0].append(self.root)
         current_hash = self.calculate_LSH(item)
         if root_bf.in_bloomfilter(current_hash):
@@ -200,7 +201,12 @@ class subtree(object):
 
                 for c in children:
                     child = c.identifier
-                    access_depth[child_depth].append(child)
+                    try:
+                        nodes_per_level = access_depth[child_depth]
+                    except KeyError:
+                        nodes_per_level = []
+                    nodes_per_level.append(child)
+                    access_depth[child_depth] = nodes_per_level
 
                     if self.tree[child].data != None and child_depth != depth:
                         if self.tree[child].data.in_bloomfilter(current_hash):

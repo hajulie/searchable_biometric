@@ -44,7 +44,7 @@ class oblivious_ram(object):
             return iris
         except KeyError:
             print(current_map)
-            print("Was not able to find a corresponding iris for "+str(h))
+            print("Was not able to find a corresponding iris for " + str(h))
             return None
 
     def padding(self, item):
@@ -100,6 +100,12 @@ class oblivious_ram(object):
         next_level_queue = []
         current_level = 1  # hard coded for now
         accesses_made = 0
+        nodes_visited = {x.identifier: [0] for x in self.maintree.subtrees}
+        access_depth = {x.identifier: [0] for x in self.maintree.subtrees}
+        for tree in access_depth:
+            access_depth[tree] = {i: [] for i in range(self.maintree.depth + 1)}
+            access_depth[tree][0] = [1]
+        num_root_matches = 0
 
         leaf_nodes = []
         hashes = []
@@ -114,6 +120,7 @@ class oblivious_ram(object):
         matching_subtrees = self.maintree.search_root_nodes(item[0].vector)
         t_end = time.time()
         self.time_root_search += t_end - t_start
+        num_root_matches = len(matching_subtrees)
 
         # create list of children nodes to visit
         for st in matching_subtrees:
@@ -131,13 +138,14 @@ class oblivious_ram(object):
 
         while queue != []:
             current_node = queue.pop(0)
+            nodes_visited[current_node[0]].append(current_node[1])
             accesses_made += 1
             tree, node = current_node[0], current_node[1]
             # print(current_node)
             # print(type(current_node))
             current_item = hashes[tree]
             # print(current_item)
-
+            access_depth[current_node[0]][current_level].append(current_node)
             original_node_data = self.retrieve_data(tree, current_level, node)
             if (original_node_data is None):
                 print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
@@ -182,7 +190,7 @@ class oblivious_ram(object):
             if returned_irises is not None:
                 for iris in returned_irises:
                     irises.add(str(iris))
-        return list(irises), leaf_nodes, [], []
+        return list(irises), leaf_nodes, nodes_visited, access_depth, num_root_matches
 
     def init_maps(self):
         nodes_map = []
