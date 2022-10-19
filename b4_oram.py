@@ -43,6 +43,7 @@ class oblivious_ram(object):
             # print(h)
             return iris
         except KeyError:
+            print(current_map)
             print("Was not able to find a corresponding iris for "+str(h))
             return None
 
@@ -102,7 +103,7 @@ class oblivious_ram(object):
 
         leaf_nodes = []
         hashes = []
-        lookup = []
+        match_hashes = []
 
         if type(item) != Iris:
             item = to_iris([item])
@@ -155,11 +156,7 @@ class oblivious_ram(object):
 
             elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
                 if current_node not in leaf_nodes:
-                    #print("Current item", current_item)
-                    #print("original node", original_node_data)
-                    # print("current node:", current_node)
-                    # print("leaf nodes", leaf_nodes)
-                    hashes.append(original_node_data)
+                    match_hashes.append(original_node_data)
                     leaf_nodes.append(current_node)
 
             # if num accesses == total accesses , break loop 
@@ -179,13 +176,13 @@ class oblivious_ram(object):
                 next_level_queue = []
 
         # retrieve irises corresponding to returned leaf nodes
-        irises = []
-        for i in hashes:
+        irises = set()
+        for i in match_hashes:
             returned_irises = self.check_hash_to_iris(i)
             if returned_irises is not None:
-                irises.append(str(returned_irises))
-
-        return irises, leaf_nodes, [], []
+                for iris in returned_irises:
+                    irises.add(str(iris))
+        return list(irises), leaf_nodes, [], []
 
     def init_maps(self):
         nodes_map = []
