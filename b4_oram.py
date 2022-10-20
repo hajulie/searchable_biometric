@@ -76,14 +76,15 @@ class oblivious_ram(object):
             print("Value does not exist")  # for testing
             print(current_oram_map)
         else:
+            t_start = time.time()
             current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash,
                                          current_oram.position_map, key=current_oram.key, storage_type='file')
             blocks_pos = current_oram_map[node]
-            t_start = time.time()
+
 
             for pos in blocks_pos:
                 raw_data.append(current_oram_file.read_block(pos))
-                self.nb_oram_access += 1
+            self.nb_oram_access += 1
 
             t_end = time.time()
             self.time_oram_access += t_end - t_start
@@ -153,10 +154,6 @@ class oblivious_ram(object):
             if (original_node_data is None):
                 print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
                 exit(1)
-            # print(current_level)
-            # print(self.maintree.depth)
-            # print("Original Node "+str(original_node_data))
-            # print("Current item "+str(current_item))
             if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
                 lst_children = original_node_data.get_children()
 

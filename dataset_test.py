@@ -169,7 +169,7 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
             if oram:
                 print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
-                print("Avg time ORAM access = " + str((tree.time_oram_access / tree.nb_oram_access) / (i+1)))
+                print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
                 print("Avg time root search = " + str(tree.time_root_search / (i+1)))
 
             print("Good traversals = " + str(sum(good_traversals)/(i+1)))
@@ -183,7 +183,7 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
     if oram:
         print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
-        print("Avg time ORAM access = " + str((tree.time_oram_access/tree.nb_oram_access)/len(queries)))
+        print("Avg time ORAM node lookup = " + str((tree.time_oram_access/tree.nb_oram_access)))
         print("Avg time root search = " + str(tree.time_root_search/len(queries)))
 
     print("Good traversals = " + str(good_traversals))
