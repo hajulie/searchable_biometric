@@ -12,9 +12,10 @@ class node_data(object):
     def __init__(self, bloom_filter, children):
         self.bloom_filter = bloom_filter
         self.children = children
+        self.max_lsh = None
+        self.left_max_lsh = None
 
     def __reduce__(self):
-        # TODO: make sure this puts items in conditional on being in the leaf level 
         return self.__class__, (self.bloom_filter, self.children)
     
     def add_item(self, item):
@@ -29,7 +30,7 @@ class node_data(object):
         else: 
             self.add_item(items)
     
-    def add_child(self, child): 
+    def add_child(self, child):
         # child is node identifier number
         self.children.append(child)
     
@@ -39,6 +40,21 @@ class node_data(object):
     def in_bloomfilter(self, item): 
         str_item = str(item)
         return str_item in self.bloom_filter
+
+    def add_children_lsh(self, lchild, rchild):
+        if type(lchild) is list and type(rchild) is list:
+            self.max_lsh = rchild
+            self.left_max_lsh = lchild
+
+        else:
+            if type(lchild) is not node_data or type(rchild) is not node_data:
+                raise TypeError()
+
+            self.max_lsh = rchild.max_lsh
+            self.left_max_lsh = lchild.max_lsh
+
+
+
     
     # def add_iris(self, iris):
     #     self.irises.append(iris)

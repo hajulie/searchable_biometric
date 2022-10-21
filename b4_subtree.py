@@ -144,6 +144,8 @@ class subtree(object):
 
         # initialize root node
         self.new_node("root", self.root, num_elements, elements=elements)
+        #To enable comparison based sort in the ORAM implementation
+        elements.sort(key=str)
 
         current_node = self.root
         parent_node = self.root - 1  # -1 is just for it to work overall
@@ -175,6 +177,16 @@ class subtree(object):
                     end = (n * items_in_filter) + items_in_filter
                     elements_in_filter = elements[begin:end]
                     self.new_node(current_node, parent_node, num_expected_elements=items_in_filter, elements=elements_in_filter)
+
+
+        while parent_node>0:
+            parent_node_data = self.get_node_data(parent_node)
+            (child_1, child_2) = parent_node_data.get_children()
+            if child_1 >= child_2:
+                raise ValueError
+            parent_node_data.add_children_lsh(self.get_node_data(child_1), self.get_node_data(child_2))
+            parent_node -= 1
+
 
     def search(self, item):
         depth = self.tree.depth()

@@ -35,6 +35,9 @@ class LSH:
     @staticmethod
     def sortLSH(hash):
         hash.sort(key = lambda x: x[0])
+    @staticmethod
+    def compareLSHstring(hash1, hash2):
+        return str(hash1)<str(hash2)
 
     @staticmethod
     def compareLSH(hash1, hash2):
