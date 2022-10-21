@@ -3,7 +3,6 @@ from treelib import Node, Tree
 import math, os, sys
 import eLSH as eLSH_import
 from LSH import LSH
-import pickle
 from Crypto.Util.Padding import pad, unpad
 
 import pyoram
@@ -48,6 +47,7 @@ class main_tree(object):
         self.eyes = []
         self.subtrees = [None for i in range(l)]  # keeps track of subtrees
         self.hash_to_iris = {}
+        self.st_leaf_to_iris = {}
 
     def put_elements_map(self, element, output):  # puts elements in hash_to_iris
         for index, h in enumerate(output):
@@ -101,7 +101,6 @@ class main_tree(object):
 
     def search_root_nodes(self, query):
         matching_subtrees = []
-
         for st in self.subtrees:
             if st.check_root(st.calculate_LSH(query)):
                 matching_subtrees.append(st.identifier)
@@ -132,13 +131,12 @@ class main_tree(object):
             for i in st_hashes:
                 returned_hashes.append(i)
 
-        irises = set()
+        irises = list()
         for h in returned_hashes:
             LSH.sortLSH(h)
             returned_irises = self.hash_to_iris[str(h)]
-            for iris in returned_irises:
-                irises.add(str(iris))
-        return list(irises), leaf_nodes, nodes_visited, access_depth, num_root_matches
+            irises+=returned_irises
+        return irises, leaf_nodes, nodes_visited, access_depth, num_root_matches
 
     """functions for oram search """
 

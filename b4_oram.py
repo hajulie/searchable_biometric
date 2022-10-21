@@ -42,12 +42,12 @@ class oblivious_ram(object):
         LSH.sortLSH(h)
         try:
             iris = current_map[str(h)]
-            # print(iris)
-            # print(h)
             return iris
         except KeyError:
-            print(current_map)
-            print("Was not able to find a corresponding iris for " + str(h))
+            #This happens if you did a bad traversal and the iris isn't actually there
+            #or if you end up at a dummy node
+            #print(current_map)
+            #print("Was not able to find a corresponding iris for " + str(search))
             return None
 
     def padding(self, item):
@@ -128,9 +128,7 @@ class oblivious_ram(object):
 
         # create list of children nodes to visit
         for st in matching_subtrees:
-            lst_children = self.maintree.subtrees[st].get_children(1)  # root is always node 1
-            for child in lst_children:
-                queue.append((st, child.identifier))
+            queue.append((st , 1))
 
         rest = self.total_accesses - len(queue)
         if (rest < 0):
@@ -141,6 +139,7 @@ class oblivious_ram(object):
         assert (len(queue) == self.total_accesses)
 
         while queue != []:
+            # print(queue)
             current_node = queue.pop(0)
             nodes_visited[current_node[0]].append(current_node[1])
             accesses_made += 1
@@ -151,20 +150,30 @@ class oblivious_ram(object):
             # print(current_item)
             access_depth[current_node[0]][current_level].append(current_node)
             original_node_data = self.retrieve_data(tree, current_level, node)
-            if (original_node_data is None):
+            if original_node_data is None:
                 print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
                 exit(1)
-            if current_level != self.maintree.depth and original_node_data.in_bloomfilter(current_item):
-                lst_children = original_node_data.get_children()
 
-                if lst_children != []:
-                    for child in lst_children:
-                        if (tree, child) not in next_level_queue:
-                            next_level_queue.append((tree, child))
+            if current_level != self.maintree.depth:
+                (lchild, rchild) = original_node_data.get_children()
+                # print("Hashes")
+                # print(current_item)
+                # print(original_node_data.left_max_lsh)
+                if LSH.compareLSHstring(current_item, original_node_data.left_max_lsh):
+                    # print("Adding request for "+str(lchild))
+                    next_level_queue.append((tree, lchild))
+                else:
+                    # print("adding request for "+str(rchild))
+                    next_level_queue.append((tree, rchild))
 
-            elif current_level == self.maintree.depth and LSH.compareLSH(original_node_data, current_item):
-                if current_node not in leaf_nodes:
-                    match_hashes.append(original_node_data)
+                # if lst_children != []:
+                #     for child in lst_children:
+                #         if (tree, child) not in next_level_queue:
+                #             next_level_queue.append((tree, child))
+
+            elif current_level == self.maintree.depth:
+                if current_node not in leaf_nodes and not LSH.dummyLSH(original_node_data):
+                    match_hashes.append(current_item)
                     leaf_nodes.append(current_node)
 
             # if num accesses == total accesses , break loop 
@@ -184,46 +193,44 @@ class oblivious_ram(object):
                 next_level_queue = []
 
         # retrieve irises corresponding to returned leaf nodes
-        irises = set()
+        irises = list()
         for i in match_hashes:
             returned_irises = self.check_hash_to_iris(i)
             if returned_irises is not None:
-                for iris in returned_irises:
-                    irises.add(str(iris))
-        return list(irises), leaf_nodes, nodes_visited, access_depth, num_root_matches
+                irises+=returned_irises
+        return irises, leaf_nodes, nodes_visited, access_depth, num_root_matches
 
     def init_maps(self):
         nodes_map = []
         for st_id in range(len(self.subtrees)):
             st = self.subtrees[st_id]
 
+
             for node_id in range(st.root, st.num_nodes + 1):
+                current_node = st.get_node_data(node_id)
                 if node_id == st.root:
                     self.root.append(node_id)
-                else:
-                    # serialize node data
-                    current_node = st.get_node_data(node_id)
+                    root_copy = node_data(bloom_filter=None, children=current_node.get_children(),
+                                          left_max_lsh=current_node.left_max_lsh)
+                    current_node = root_copy
+                if current_node is None:
+                    raise ValueError("Cannot serialize empty node")
+                    # default node that doesn't match anything
+                if type(current_node) is node_data:
+                    current_node.bloom_filter = None
+                pickled_node = pickle.dumps(current_node)
+                depth = st.get_depth(node_id)
 
-                    if current_node is None:
-                        raise ValueError("Cannot serialize empty node")
-                        # default node that doesn't match anything
-                        # current_node =
-                    # print(current_node)
-                    pickled_node = pickle.dumps(current_node)
-                    depth = st.get_depth(node_id)
-
-                    # if new depth, create corresponding array
-                    if len(nodes_map) < depth:
-                        nodes_map.append([])
-
-                    blocks_list = self.create_blocks(pickled_node)
-
-                    for block in blocks_list:
-                        nodes_map[depth - 1].append((st_id, node_id, [block]))
+                # if new depth, create corresponding array
+                if len(nodes_map) < depth+1:
+                    nodes_map.append([])
+                blocks_list = self.create_blocks(pickled_node)
+                for block in blocks_list:
+                    nodes_map[depth -1].append((st_id, node_id, [block]))
         return nodes_map
 
     def build_oram(self, nodes_map):
-        self.oram = [None for i in range(self.maintree.subtrees[0].get_depth())]
+        self.oram = [None for i in range(self.maintree.subtrees[0].get_depth()+1)]
         self.oram_map = [{} for i in range(len(self.subtrees))]
 
         for (depth, serialized_nodes) in enumerate(nodes_map):

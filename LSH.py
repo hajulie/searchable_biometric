@@ -1,5 +1,6 @@
 import secrets
-import pickle 
+import pickle
+
 
 # Bit sampling LSH for the Hamming distance
 class LSH:
@@ -34,10 +35,16 @@ class LSH:
 
     @staticmethod
     def sortLSH(hash):
-        hash.sort(key = lambda x: x[0])
+        hash.sort(key=lambda x: x[0])
+
     @staticmethod
     def compareLSHstring(hash1, hash2):
-        return str(hash1)<str(hash2)
+        return str(hash1) <= str(hash2)
+
+    @staticmethod
+    def dummyLSH(hash1):
+        for p1, b1 in hash1:
+            return b1 == 2
 
     @staticmethod
     def compareLSH(hash1, hash2):

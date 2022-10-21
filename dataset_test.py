@@ -130,32 +130,34 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
     # run queries on whole dataset
     for i in range(len(queries)):
-        (returned_iris, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
+        (returned_iris_list, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
             queries[i])  # parallel = False for now because parallel search is way slower than expected
 
         visited_nodes.append(sum(1 for x in nodes_visited for y in nodes_visited[x]))
         nb_matching_roots.append(num_root_matches)
         res = [item[1] for item in leaf_nodes]
 
-        no_dup_res = list(set(res))
-        if int(leaves[i].tag) in no_dup_res:
-            true_pos = true_pos + 1
+        no_dup_res = list(set(returned_iris_list))
+        found_iris = 0
+        for iris in no_dup_res:
+            if iris.identity == i:
+                found_iris = 1
+                true_pos = true_pos + 1
 
-            if len(no_dup_res) > 1:
-                false_pos.append(len(no_dup_res) - 1)
-            else:
-                false_pos.append(0)
-        # elif len(no_dup_res) != 0:
-        else:
+                if len(no_dup_res) > 1:
+                    false_pos.append(len(no_dup_res) - 1)
+                else:
+                    false_pos.append(0)
+
+        if found_iris == 0:
             false_pos.append(len(no_dup_res))
 
         # compute number of good & bad traversals (not ignoring duplicates)
         tmp_good_traversals = 0
         tmp_bad_traversals = 0
-        for r in res:
-            if int(leaves[i].tag) == r:
+        for iris in returned_iris_list:
+            if iris.identity == i:
                 tmp_good_traversals += 1
-
         tmp_bad_traversals = num_root_matches - tmp_good_traversals
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
@@ -166,17 +168,18 @@ def compute_sys_rates(tree, queries, parallel, oram):
             print("Avg false positives per query = " + str(sum(false_pos) / (i+1)))
             print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i+1)))
             print("Max root matches in a query = " + str(max(nb_matching_roots)))
+            print("Avg root matches in a query = " + str(sum(nb_matching_roots)/(i+1)))
+            print("Good traversals = " + str(sum(good_traversals)/(i+1)))
+            print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
 
             if oram:
                 print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
                 print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
                 print("Avg time root search = " + str(tree.time_root_search / (i+1)))
 
-            print("Good traversals = " + str(sum(good_traversals)/(i+1)))
-            print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
+
 
     print("True Positive Rate = " + str(true_pos / len(queries)))
-    print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
     print("Max root matches in a query = " + str(max(nb_matching_roots)))
