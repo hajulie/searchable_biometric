@@ -9,11 +9,11 @@ import pickle
 from Crypto.Util.Padding import pad, unpad
 
 class node_data(object):
-    def __init__(self, bloom_filter, children):
+    def __init__(self, bloom_filter, children, max_left_lsh = None):
         self.bloom_filter = bloom_filter
         self.children = children
         self.max_lsh = None
-        self.left_max_lsh = None
+        self.left_max_lsh = max_left_lsh
 
     def __reduce__(self):
         return self.__class__, (self.bloom_filter, self.children)

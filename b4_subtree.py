@@ -116,7 +116,7 @@ class subtree(object):
         if current_node == "root":
             # corner case: current_node == "root", parent_node == self.root,
             bf = BloomFilter(max_elements=num_expected_elements * (self.l), error_rate=self.error_rate)
-            _node_ = node_data(bloom_filter=bf, children=[])
+            _node_ = node_data(bloom_filter=bf, children=[], max_left_lsh=None)
             _node_.add_multiple(elements)
             self.tree.create_node(current_node, self.root, data=_node_)
         else:
@@ -127,13 +127,13 @@ class subtree(object):
                     _node_ = [(self.vector_length-1, 2)]*self.l
             else:
                 bf = BloomFilter(max_elements=(self.l * num_expected_elements), error_rate=self.error_rate)
-                _node_ = node_data(bloom_filter=bf, children=[])
+                _node_ = node_data(bloom_filter=bf, children=[],max_left_lsh=None)
                 _node_.add_multiple(elements)
             self.add_child(parent_node, current_node)
             self.tree.create_node(str(current_node), current_node, data=_node_, parent=parent_node)
 
 
-    def build_tree(self, og_elements):
+    def  build_tree(self, og_elements):
         self.tree = Tree()
         num_elements = len(og_elements)
         level = 0
@@ -146,7 +146,6 @@ class subtree(object):
         self.new_node("root", self.root, num_elements, elements=elements)
         #To enable comparison based sort in the ORAM implementation
         elements.sort(key=str)
-
         current_node = self.root
         parent_node = self.root - 1  # -1 is just for it to work overall
 
