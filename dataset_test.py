@@ -255,7 +255,6 @@ if __name__ == '__main__':
             storage_t.apply(random_tree)
             print("ORAM finished.")
             print("Size of files " + str(size_oram_files()))
-            exit(1)
             random_tree = storage_t
         t_end = time.time()
         t_oram = t_end - t_start
