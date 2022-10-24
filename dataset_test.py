@@ -108,6 +108,7 @@ def compute_sys_rates(tree, queries, parallel, oram):
     visited_nodes = []
     nb_matching_roots = []
 
+
     # run queries on whole dataset
     for i in range(len(queries)):
         (returned_iris_list, leaf_nodes, nodes_visited, access_depth, num_root_matches) = tree.search(
@@ -190,6 +191,11 @@ def plot_matching_roots(root_matches):
     res.plot()
     plt.show()
 
+def size_oram_files():
+        total_file_size=0
+        for file in glob.glob("heap*"):
+            total_file_size+=os.stat(file).st_size
+        return total_file_size
 
 if __name__ == '__main__':
     print(sys.version)
@@ -224,6 +230,8 @@ if __name__ == '__main__':
     lsh_size = args.lsh_size  # LSH output size
     lsh_r = math.floor(t * n)
     lsh_c = args.diff_t * (n / lsh_r)
+    for file in glob.glob("heap*"):
+        os.remove(file)
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
@@ -246,6 +254,8 @@ if __name__ == '__main__':
             print("ORAM created, now putting tree in it...")
             storage_t.apply(random_tree)
             print("ORAM finished.")
+            print("Size of files " + str(size_oram_files()))
+            exit(1)
             random_tree = storage_t
         t_end = time.time()
         t_oram = t_end - t_start
