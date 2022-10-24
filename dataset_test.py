@@ -47,7 +47,7 @@ def build_rand_dataset(l, n, t):
 
         queries.append(query)
 
-    return dataset, queries
+    return dataset, queries[:100]
 
 
 def build_ND_dataset():
@@ -65,7 +65,7 @@ def build_ND_dataset():
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
 
-    return nd_templates, nd_queries
+    return nd_templates, nd_queries[:100]
 
 
 def build_synthetic_dataset(l, n, t):
@@ -92,29 +92,9 @@ def build_synthetic_dataset(l, n, t):
         if ctr > l:
             break
 
-    return dataset, queries
-
-
-# def build_mixed_dataset(data1, queries1, l1, data2, l2):
-#     data = []
-#     queries = []
-#
-#     # randomly pick l1 vectors and queries from dataset 1
-#     chosen_ones = random.sample(range(len(data1)), l1)
-#     for i in chosen_ones:
-#         data.append(data1[i])
-#         queries.append(queries1[i])
-#
-#     # randomly pick l2 vectors from dataset 2
-#     chosen_ones = random.sample(range(len(data2)), l2)
-#     for i in chosen_ones:
-#         data.append(data2[i])
-#
-#     return data, queries
-
+    return dataset, queries[:100]
 
 # only works if tree leaves order are not randomized !!!!
-
 def compute_sys_rates(tree, queries, parallel, oram):
     tpr = 0
     fpr = 0
@@ -183,14 +163,16 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
     print("Max root matches in a query = " + str(max(nb_matching_roots)))
+    print("Avg root matches in a query = " + str(sum(nb_matching_roots) / (i + 1)))
+    print("Good traversals = " + str(good_traversals))
+    print("Bad traversals = " + str(bad_traversals))
 
     if oram:
         print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
         print("Avg time ORAM node lookup = " + str((tree.time_oram_access/tree.nb_oram_access)))
         print("Avg time root search = " + str(tree.time_root_search/len(queries)))
 
-    print("Good traversals = " + str(good_traversals))
-    print("Bad traversals = " + str(bad_traversals))
+
 
 
     tpr = true_pos / len(queries)
