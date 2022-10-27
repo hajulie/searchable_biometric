@@ -1,0 +1,124 @@
+3.9.6 (default, Apr 22 2022, 13:23:16) 
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-44)]
+total nodes = 2640630
+Building ORAM...
+ORAM created, now putting tree in it...
+ORAM finished.
+Size of files 4443781966
+Query number 11 of 100
+True Positive Rate = 1.0
+Avg false positives per query = 12.272727272727273
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 15.090909090909092
+Good traversals = 2.8181818181818183
+Bad traversals = 12.272727272727273
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16347415194366918
+Avg time root search = 0.20852609114213425
+Query number 21 of 100
+True Positive Rate = 1.0
+Avg false positives per query = 11.666666666666666
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 15.0
+Good traversals = 3.238095238095238
+Bad traversals = 11.761904761904763
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.1633273384306166
+Avg time root search = 0.2070169108254569
+Query number 31 of 100
+True Positive Rate = 1.0
+Avg false positives per query = 11.870967741935484
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 15.225806451612904
+Good traversals = 3.2903225806451615
+Bad traversals = 11.935483870967742
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16458029608572683
+Avg time root search = 0.20634158195987826
+Query number 41 of 100
+True Positive Rate = 1.0
+Avg false positives per query = 11.341463414634147
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.560975609756097
+Good traversals = 3.1707317073170733
+Bad traversals = 11.390243902439025
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16471477372859553
+Avg time root search = 0.20541540006311929
+Query number 51 of 100
+True Positive Rate = 0.9803921568627451
+Avg false positives per query = 11.529411764705882
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.72549019607843
+Good traversals = 3.1176470588235294
+Bad traversals = 11.607843137254902
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16469831945070254
+Avg time root search = 0.20579851374906652
+Query number 61 of 100
+True Positive Rate = 0.9836065573770492
+Avg false positives per query = 11.688524590163935
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.934426229508198
+Good traversals = 3.1475409836065573
+Bad traversals = 11.78688524590164
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16470664641896232
+Avg time root search = 0.20633814373954398
+Query number 71 of 100
+True Positive Rate = 0.9859154929577465
+Avg false positives per query = 11.535211267605634
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.71830985915493
+Good traversals = 3.1267605633802815
+Bad traversals = 11.591549295774648
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16468133532385312
+Avg time root search = 0.20696498978305872
+Query number 81 of 100
+True Positive Rate = 0.9753086419753086
+Avg false positives per query = 11.493827160493828
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.604938271604938
+Good traversals = 3.0617283950617282
+Bad traversals = 11.54320987654321
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16506383431791768
+Avg time root search = 0.206874664918876
+Query number 91 of 100
+True Positive Rate = 0.967032967032967
+Avg false positives per query = 11.43956043956044
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.648351648351648
+Good traversals = 3.142857142857143
+Bad traversals = 11.505494505494505
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.1650671439467769
+Avg time root search = 0.20632028579711914
+True Positive Rate = 0.96
+Avg false positives per query = 11.48
+Avg visited nodes per query  = 1590.0
+Max root matches in a query = 25
+Avg root matches in a query = 14.7
+Good traversals = [2, 4, 2, 2, 3, 1, 3, 5, 3, 5, 1, 4, 7, 2, 3, 6, 3, 2, 2, 3, 5, 2, 1, 6, 3, 2, 6, 3, 5, 4, 2, 1, 6, 2, 2, 2, 4, 4, 4, 2, 1, 4, 1, 4, 5, 0, 1, 4, 3, 2, 5, 2, 4, 2, 5, 4, 3, 4, 5, 1, 3, 3, 3, 1, 4, 3, 2, 4, 3, 4, 3, 2, 0, 2, 2, 3, 5, 5, 2, 3, 2, 1, 3, 4, 5, 7, 5, 0, 4, 6, 3, 2, 1, 3, 4, 4, 2, 0, 2, 8]
+Bad traversals = [12, 11, 14, 6, 12, 7, 11, 8, 22, 17, 15, 8, 12, 15, 7, 9, 16, 12, 7, 12, 14, 16, 18, 8, 12, 4, 15, 11, 7, 20, 12, 5, 8, 12, 6, 8, 19, 8, 13, 7, 11, 13, 10, 15, 12, 13, 16, 10, 12, 11, 13, 8, 13, 16, 11, 18, 12, 10, 11, 13, 15, 12, 10, 12, 12, 12, 8, 9, 9, 11, 9, 13, 13, 11, 9, 11, 12, 10, 9, 15, 9, 12, 22, 15, 10, 9, 10, 10, 14, 7, 3, 8, 12, 13, 11, 7, 17, 11, 18, 14]
+#ORAM accesses per query = 300.0
+Avg time ORAM node lookup = 0.16498268864949545
+Avg time root search = 0.20634282350540162
+Random dataset/queries : Size dataset = 1000 - size queries = 100
+Random dataset/queries : TPR = 0.96
+Random dataset/queries : FPR = 0.0112109375
+Random dataset/queries : build_dataset takes 0.33448004722595215 seconds.
+Random dataset/queries : build_index takes 250.74876046180725 seconds.
+Random dataset/queries : ORAM setup takes 69795.26388645172 seconds.
+Random dataset/queries : search takes 9091.205480337143 seconds.
+Random dataset/queries : avg number of root matches 14.7
