@@ -83,7 +83,7 @@ def sys_params_to_csv(l, b,  n, db_size, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, 
         # create the csv writer
         writer = csv.writer(f)
 
-        for s in range(4, 100, 1):
+        for s in range(1, 100, 1):
             lsh_tpr_s = pow(lsh_tpr, s)
             lsh_fpr_s = pow(lsh_fpr, s)
             min_trees = desired_max_k
@@ -91,10 +91,9 @@ def sys_params_to_csv(l, b,  n, db_size, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, 
             tp_matches = 0
             fp_matches = 0
 
-            for k in range(5, desired_max_k+10, 5):
+            for k in range(5, desired_max_k+10, 1):
                 # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
                 (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
-
                 # if rates not good enough, discard
                 if sys_tpr > desired_tpr and sys_fpr < desired_fpr:
                     nodes_per_level = nb_nodes_visited_per_level(l, k, b, lsh_tpr_s, lsh_fpr_s)
@@ -122,6 +121,7 @@ def sys_params_to_csv(l, b,  n, db_size, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, 
                        round(tmp_max_tpr, 3), round(tmp_max_fpr, 4), round(tp_matches,3), round(fp_matches,3))
                 writer.writerow(row)
                 print(row)
+                #exit(0)
 
     return filename
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     bf_fpr = args.bf_fpr  # bloom filter fpr, default = 10^-4
     lsh_tpr = args.lsh_tpr
     lsh_fpr = args.lsh_fpr
-    desired_max_k = 100000000
+    desired_max_k = 1000000
 
     print("Estimated tree depth = " + str(compute_tree_depth(db_size, branch_factor)))
 

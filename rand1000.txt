@@ -5,7 +5,7 @@ Building ORAM...
 ORAM created, now putting tree in it...
 ORAM finished.
 Size of files 4443781966
-Query number 11 of 100
+Query number 11 of 100.
 True Positive Rate = 1.0
 Avg false positives per query = 12.272727272727273
 Avg visited nodes per query  = 1590.0
