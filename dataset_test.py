@@ -1,5 +1,7 @@
 import sys
 
+import scipy
+
 from b4_main_tree import main_tree
 from b4_main_tree import build_db
 from b4_oram import oblivious_ram
@@ -31,23 +33,46 @@ def compute_tree_depth(b, nb_nodes):
     return math.floor(math.log(nb_nodes, b))
 
 
+def sample_errors(vector_size):
+    mean_same = 0.21
+    stdev_same = 0.056
+
+    # compute n using degrees of freedom formula
+    n = (mean_same * (1 - mean_same))/(stdev_same**2)
+    p = mean_same
+    # print("p = " + str(p) + " and n = " + str(math.ceil(n)))
+
+    error_fraction = scipy.stats.binom.rvs(math.ceil(n), p)/n
+    # print(error_fraction)
+    nb_errors = round(vector_size * error_fraction)
+    return nb_errors, round(error_fraction, 3)
+
+
 def build_rand_dataset(l, n, t):
     dataset = []
     queries = []
+    errors_table = []
 
     for i in range(l):
         feature = [random.getrandbits(1) for i in range(n)]
         dataset.append(feature)
-        query = dataset[i][:]
+        query = dataset[i][:] # need to be careful to copy value ! (keep the [:] !!)
 
-        # randomly sample t error bits to be inverted
-        error_bits = random.sample(range(n), math.floor(n * t))
+        # sample errors from distribution
+        nb_errors, fraction = sample_errors(n)
+        # print("Errors from normal distribution : " + str(nb_errors))
+        errors_table.append(nb_errors)
+        # randomly sample error bits to be inverted
+        error_bits = random.sample(range(n), nb_errors)
         for b in error_bits:
             query[b] = (query[b] + 1) % 2
 
         queries.append(query)
 
-    return dataset, queries[:100]
+    print(errors_table)
+    # plt.plot(errors_table)
+
+    return dataset, queries
 
 
 def build_ND_dataset():
@@ -72,27 +97,35 @@ def build_synthetic_dataset(l, n, t):
     dataset = []
     queries = []
     labels = []
+    errors_table = []
     ctr = 0
 
     cwd = os.getcwd()
     file_list = glob.glob(cwd + "//datasets//synthetic_dataset//*")
+
     for x in file_list:
         dataset.append(read_fvector(x))
         labels.append(x[len(x) - 9:])
 
         # create query with 30% errors
         query = read_fvector(x)
-        # randomly sample t error bits to be inverted
-        error_bits = random.sample(range(n), math.floor(n * t))
+
+        # sample errors from distribution
+        nb_errors, fraction = sample_errors(n)
+        # print("Errors from normal distribution : " + str(nb_errors))
+        errors_table.append(nb_errors)
+        # randomly sample error bits to be inverted
+        error_bits = random.sample(range(n), nb_errors)
         for b in error_bits:
             query[b] = (query[b] + 1) % 2
         queries.append(query)
 
         ctr = ctr + 1
-        if ctr > l:
+        if ctr == l:
             break
 
-    return dataset, queries[:100]
+    print(str(errors_table))
+    return dataset, queries
 
 # only works if tree leaves order are not randomized !!!!
 def compute_sys_rates(tree, queries, parallel, oram):
@@ -107,7 +140,6 @@ def compute_sys_rates(tree, queries, parallel, oram):
     false_pos = []
     visited_nodes = []
     nb_matching_roots = []
-
 
     # run queries on whole dataset
     for i in range(len(queries)):
@@ -158,23 +190,22 @@ def compute_sys_rates(tree, queries, parallel, oram):
                 print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
                 print("Avg time root search = " + str(tree.time_root_search / (i+1)))
 
-
-
     print("True Positive Rate = " + str(true_pos / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
     print("Max root matches in a query = " + str(max(nb_matching_roots)))
-    print("Avg root matches in a query = " + str(sum(nb_matching_roots) / (i + 1)))
-    print("Good traversals = " + str(good_traversals))
-    print("Bad traversals = " + str(bad_traversals))
+    print("Avg root matches in a query = " + str(sum(nb_matching_roots) / len(queries)))
+    # print("Good traversals = " + str(good_traversals))
+    # print("Bad traversals = " + str(bad_traversals))
+    print("Avg good traversals = " + str(sum(good_traversals) / len(queries)))
+    print("Max good traversals = " + str(max(good_traversals)))
+    print("Avg bad traversals = " + str(sum(bad_traversals) / len(queries)))
+    print("Max bad traversals = " + str(max(bad_traversals)))
 
     if oram:
         print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
         print("Avg time ORAM node lookup = " + str((tree.time_oram_access/tree.nb_oram_access)))
         print("Avg time root search = " + str(tree.time_root_search/len(queries)))
-
-
-
 
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
@@ -196,6 +227,7 @@ def size_oram_files():
         for file in glob.glob("heap*"):
             total_file_size+=os.stat(file).st_size
         return total_file_size
+
 
 if __name__ == '__main__':
     print(sys.version)
