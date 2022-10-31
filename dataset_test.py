@@ -94,7 +94,7 @@ def build_ND_dataset(show_hist = False):
 
     if show_hist == 1:
         build_show_histogram(nd_templates, nd_queries)
-    return nd_templates, nd_queries[:100]
+    return nd_templates, nd_queries
 
 
 def build_synthetic_dataset(l, n, t, show_hist= False):
@@ -208,6 +208,20 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Max good traversals = " + str(max(good_traversals)))
     print("Avg bad traversals = " + str(sum(bad_traversals) / len(queries)))
     print("Max bad traversals = " + str(max(bad_traversals)))
+
+
+    show_match_histogram = 0
+    if show_match_histogram ==1:
+        plt.hist(good_traversals, density=True, bins=50, histtype='stepfilled',
+                 color='b', alpha=0.7, label='Good Matches')
+
+        plt.hist(bad_traversals, density=True, bins=50, histtype='stepfilled',
+                     color='r', label='Bad Matches')
+        plt.legend()
+        plt.xlabel("Number of root matches")
+        plt.ylabel("Frequency")
+        plt.show()
+
 
     if oram:
         print("#ORAM accesses per query = " + str(tree.nb_oram_access / len(queries)))
