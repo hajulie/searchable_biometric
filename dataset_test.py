@@ -48,7 +48,7 @@ def sample_errors(vector_size):
     return nb_errors, round(error_fraction, 3)
 
 
-def build_rand_dataset(l, n, t):
+def build_rand_dataset(l, n, t, show_hist = False):
     dataset = []
     queries = []
     errors_table = []
@@ -69,13 +69,15 @@ def build_rand_dataset(l, n, t):
 
         queries.append(query)
 
+    if show_hist == 1:
+        build_show_histogram(dataset, queries)
     #print(errors_table)
     # plt.plot(errors_table)
 
     return dataset, queries
 
 
-def build_ND_dataset():
+def build_ND_dataset(show_hist = False):
     cwd = os.getcwd()
     dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
     nd_dataset = {}
@@ -90,10 +92,12 @@ def build_ND_dataset():
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
 
+    if show_hist == 1:
+        build_show_histogram(nd_templates, nd_queries)
     return nd_templates, nd_queries[:100]
 
 
-def build_synthetic_dataset(l, n, t):
+def build_synthetic_dataset(l, n, t, show_hist= False):
     dataset = []
     queries = []
     labels = []
@@ -124,6 +128,8 @@ def build_synthetic_dataset(l, n, t):
         if ctr == l:
             break
 
+    if show_hist == 1:
+        build_show_histogram(dataset, queries)
     print(str(errors_table))
     return dataset, queries
 
@@ -237,29 +243,25 @@ def hamming_dist(sample1, sample2):
 def build_show_histogram(data, queries):
     blueDistances=[]
     redDistances=[]
-    print(type(data))
-    print(type(queries))
-    print(len(data))
-    print(len(queries))
     for i in range(0, len(data)):
         for j in range(0, len(data)):
-            print(data[i])
             if i != j:
                 blueDistances.append(hamming_dist(data[i], data[j]))
 
-        if type(queries[i][0]) is int:
-            diff_query = queries[i]
-            redDistances.append(hamming_dist(data[i], diff_query))
-        else:
-            for diff_query in queries[i]:
+        if len(queries) > i and len(queries[i]) > 0:
+            if type(queries[i][0]) is int:
+                diff_query = queries[i]
                 redDistances.append(hamming_dist(data[i], diff_query))
+            else:
+                for diff_query in queries[i]:
+                    redDistances.append(hamming_dist(data[i], diff_query))
         #     print(type(diff_queries))
 
     if len(blueDistances) > 0:
-        plt.hist(blueDistances, density=True, bins=512, histtype='stepfilled', color='b',alpha=0.7, label='Same')
+        plt.hist(blueDistances, density=True, bins=128, histtype='stepfilled', color='b',alpha=0.7, label='Same')
 
     if len(redDistances) > 0:
-        plt.hist(redDistances, density=True, bins=512, histtype='stepfilled', color='r', label='Different')
+        plt.hist(redDistances, density=True, bins=128, histtype='stepfilled', color='r', label='Different')
 
     if len(blueDistances) >0 or len(redDistances) > 0:
         plt.show()
@@ -287,6 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=15)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
+    parser.add_argument('--show_histogram', help="Show histogram for tested dataset.", type=int, default=0)
     parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int,
                         default=100)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
@@ -295,6 +298,7 @@ if __name__ == '__main__':
 
     parallel = bool(args.parallel)
     oram = bool(args.oram)
+    show_hist = bool(args.show_histogram)
 
     l = args.dataset_size  # dataset size
     k = args.nb_trees  # number of trees to build
@@ -315,7 +319,7 @@ if __name__ == '__main__':
     if args.dataset == "rand" or args.dataset == "all":
 
         t_start = time.time()
-        random_data, random_queries = build_rand_dataset(l, n, t)
+        random_data, random_queries = build_rand_dataset(l, n, t, show_hist=show_hist)
         t_end = time.time()
         t_dataset = t_end - t_start
 
@@ -360,8 +364,7 @@ if __name__ == '__main__':
     # build & search using ND dataset
     if args.dataset == "nd" or args.dataset == "all":
         t_start = time.time()
-        ND_data, ND_queries = build_ND_dataset()
-        build_show_histogram(ND_data, ND_queries)
+        ND_data, ND_queries = build_ND_dataset(show_hist=show_hist)
         t_end = time.time()
         t_dataset = t_end - t_start
 
@@ -403,7 +406,7 @@ if __name__ == '__main__':
     if args.dataset == "synth" or args.dataset == "all":
 
         t_start = time.time()
-        synthetic_data, synthetic_queries = build_synthetic_dataset(l, n, t)
+        synthetic_data, synthetic_queries = build_synthetic_dataset(l, n, t, show_hist=show_hist)
         t_end = time.time()
         t_dataset = t_end - t_start
 
