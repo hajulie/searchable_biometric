@@ -260,11 +260,11 @@ def build_show_histogram(data, queries):
     redWeights = [1/len(redDistances) for i in range(0, len(redDistances))]
     blueWeights = [1/len(blueDistances) for i in range(0, len(blueDistances))]
     if len(blueDistances) > 0:
-        plt.hist(blueDistances, density=True, bins=128, histtype='stepfilled', weights= blueWeights,
+        plt.hist(blueDistances, density=True, bins=41, histtype='stepfilled', weights= blueWeights,
                  color='b', alpha=0.7, label='Same')
 
     if len(redDistances) > 0:
-        plt.hist(redDistances, density=True, bins=128, histtype='stepfilled', weights = redWeights,
+        plt.hist(redDistances, density=True, bins=41, histtype='stepfilled', weights = redWeights,
                  color='r', label='Different')
 
     if len(blueDistances) >0 or len(redDistances) > 0:
