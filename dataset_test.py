@@ -211,11 +211,11 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
 
     show_match_histogram = 0
-    if show_match_histogram ==1:
-        plt.hist(good_traversals, density=True, bins=50, histtype='stepfilled',
+    if show_match_histogram == 1:
+        plt.hist(good_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
                  color='b', alpha=0.7, label='Good Matches')
 
-        plt.hist(bad_traversals, density=True, bins=50, histtype='stepfilled',
+        plt.hist(bad_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
                      color='r', label='Bad Matches')
         plt.legend()
         plt.xlabel("Number of root matches")
