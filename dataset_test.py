@@ -38,11 +38,11 @@ def sample_errors(vector_size):
     stdev_same = 0.056
 
     # compute n using degrees of freedom formula
-    n = (mean_same * (1 - mean_same))/(stdev_same**2)
+    n = (mean_same * (1 - mean_same)) / (stdev_same ** 2)
     p = mean_same
     # print("p = " + str(p) + " and n = " + str(math.ceil(n)))
 
-    error_fraction = scipy.stats.binom.rvs(math.ceil(n), p)/n
+    error_fraction = scipy.stats.binom.rvs(math.ceil(n), p) / n
     # print(error_fraction)
     nb_errors = round(vector_size * error_fraction)
     return nb_errors, round(error_fraction, 3)
@@ -56,7 +56,7 @@ def build_rand_dataset(l, n, t):
     for i in range(l):
         feature = [random.getrandbits(1) for i in range(n)]
         dataset.append(feature)
-        query = dataset[i][:] # need to be careful to copy value ! (keep the [:] !!)
+        query = dataset[i][:]  # need to be careful to copy value ! (keep the [:] !!)
 
         # sample errors from distribution
         nb_errors, fraction = sample_errors(n)
@@ -69,7 +69,7 @@ def build_rand_dataset(l, n, t):
 
         queries.append(query)
 
-    print(errors_table)
+    #print(errors_table)
     # plt.plot(errors_table)
 
     return dataset, queries
@@ -127,6 +127,7 @@ def build_synthetic_dataset(l, n, t):
     print(str(errors_table))
     return dataset, queries
 
+
 # only works if tree leaves order are not randomized !!!!
 def compute_sys_rates(tree, queries, parallel, oram):
     tpr = 0
@@ -176,19 +177,19 @@ def compute_sys_rates(tree, queries, parallel, oram):
         bad_traversals.append(tmp_bad_traversals)
 
         if 0 == i % 10 and i > 0:
-            print("Query number "+str(i+1)+" of "+str(len(queries)))
-            print("True Positive Rate = "+str(true_pos/(i+1)))
-            print("Avg false positives per query = " + str(sum(false_pos) / (i+1)))
-            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i+1)))
+            print("Query number " + str(i + 1) + " of " + str(len(queries)))
+            print("True Positive Rate = " + str(true_pos / (i + 1)))
+            print("Avg false positives per query = " + str(sum(false_pos) / (i + 1)))
+            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i + 1)))
             print("Max root matches in a query = " + str(max(nb_matching_roots)))
-            print("Avg root matches in a query = " + str(sum(nb_matching_roots)/(i+1)))
-            print("Good traversals = " + str(sum(good_traversals)/(i+1)))
-            print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
+            print("Avg root matches in a query = " + str(sum(nb_matching_roots) / (i + 1)))
+            print("Good traversals = " + str(sum(good_traversals) / (i + 1)))
+            print("Bad traversals = " + str(sum(bad_traversals) / (i + 1)))
 
             if oram:
-                print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
-                print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
-                print("Avg time root search = " + str(tree.time_root_search / (i+1)))
+                print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i + 1)))
+                print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access)))
+                print("Avg time root search = " + str(tree.time_root_search / (i + 1)))
 
     print("True Positive Rate = " + str(true_pos / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
@@ -203,9 +204,9 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Max bad traversals = " + str(max(bad_traversals)))
 
     if oram:
-        print("#ORAM accesses per query = " + str(tree.nb_oram_access/len(queries)))
-        print("Avg time ORAM node lookup = " + str((tree.time_oram_access/tree.nb_oram_access)))
-        print("Avg time root search = " + str(tree.time_root_search/len(queries)))
+        print("#ORAM accesses per query = " + str(tree.nb_oram_access / len(queries)))
+        print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access)))
+        print("Avg time root search = " + str(tree.time_root_search / len(queries)))
 
     tpr = true_pos / len(queries)
     fpr = sum(false_pos) / (len(leaves) * len(queries))
@@ -222,11 +223,55 @@ def plot_matching_roots(root_matches):
     res.plot()
     plt.show()
 
+
+def hamming_dist(sample1, sample2):
+    dist = 0
+    if len(sample1) != len(sample2):
+        raise ValueError
+
+    for i in range(0, len(sample1)):
+        if sample1[i] != sample2[i]:
+            dist+=1/len(sample1)
+    return dist
+
+def build_show_histogram(data, queries):
+    blueDistances=[]
+    redDistances=[]
+    print(type(data))
+    print(type(queries))
+    print(len(data))
+    print(len(queries))
+    for i in range(0, len(data)):
+        for j in range(0, len(data)):
+            print(data[i])
+            if i != j:
+                blueDistances.append(hamming_dist(data[i], data[j]))
+
+        if type(queries[i][0]) is int:
+            diff_query = queries[i]
+            redDistances.append(hamming_dist(data[i], diff_query))
+        else:
+            for diff_query in queries[i]:
+                redDistances.append(hamming_dist(data[i], diff_query))
+        #     print(type(diff_queries))
+
+    if len(blueDistances) > 0:
+        plt.hist(blueDistances, density=True, bins=512, histtype='stepfilled', color='b',alpha=0.7, label='Same')
+
+    if len(redDistances) > 0:
+        plt.hist(redDistances, density=True, bins=512, histtype='stepfilled', color='r', label='Different')
+
+    if len(blueDistances) >0 or len(redDistances) > 0:
+        plt.show()
+
+#    plt.hist(redComparisons, normed=True, bins=120, histtype='stepfilled', color='r', label='Different')
+# plt.show()
+
 def size_oram_files():
-        total_file_size=0
-        for file in glob.glob("heap*"):
-            total_file_size+=os.stat(file).st_size
-        return total_file_size
+    total_file_size = 0
+    for file in glob.glob("heap*"):
+        total_file_size += os.stat(file).st_size
+    return total_file_size
 
 
 if __name__ == '__main__':
@@ -242,7 +287,8 @@ if __name__ == '__main__':
     parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=15)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
-    parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int, default=100)
+    parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int,
+                        default=100)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
     args = parser.parse_args()
@@ -274,7 +320,8 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        random_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr, random_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        random_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr, random_data, n, lsh_r, lsh_c,
+                                     lsh_size, k, parallel)
         print("total nodes = " + str(random_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
@@ -305,7 +352,7 @@ if __name__ == '__main__':
         if oram:
             print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
         print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
-        print("Random dataset/queries : avg number of root matches " + str(sum(root_matches)/len(root_matches)))
+        print("Random dataset/queries : avg number of root matches " + str(sum(root_matches) / len(root_matches)))
 
         # plot number of matching root nodes + binomial fit
         # plot_matching_roots(root_matches)
@@ -314,6 +361,7 @@ if __name__ == '__main__':
     if args.dataset == "nd" or args.dataset == "all":
         t_start = time.time()
         ND_data, ND_queries = build_ND_dataset()
+        build_show_histogram(ND_data, ND_queries)
         t_end = time.time()
         t_dataset = t_end - t_start
 
@@ -360,7 +408,8 @@ if __name__ == '__main__':
         t_dataset = t_end - t_start
 
         t_start = time.time()
-        synth_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr,  synthetic_data, n, lsh_r, lsh_c, lsh_size, k, parallel)
+        synth_tree, data = build_db(branching_factor, root_bf_fpr, internal_bf_fpr, synthetic_data, n, lsh_r, lsh_c,
+                                    lsh_size, k, parallel)
         print("total nodes = " + str(synth_tree.total_nodes))
         t_end = time.time()
         t_tree = t_end - t_start
