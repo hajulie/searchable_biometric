@@ -70,6 +70,15 @@ def build_rand_dataset(l, n, t, show_hist = False):
         queries.append(query)
 
     if show_hist == 1:
+        for j in range(0, len(dataset)):
+            queries[j] = []
+            for i in range(0, 100):
+                nb_errors, fraction = sample_errors(n)
+                temp_query = dataset[j].copy()
+                error_bits = random.sample(range(n), nb_errors)
+                for b in error_bits:
+                    temp_query[b] = (temp_query[b] + 1) % 2
+                queries[j].append(temp_query)
         build_show_histogram(dataset, queries)
     #print(errors_table)
     # plt.plot(errors_table)
@@ -93,6 +102,7 @@ def build_ND_dataset(show_hist = False):
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
 
     if show_hist == 1:
+        nd_queries = [nd_dataset[x][1:] for x in nd_dataset]
         build_show_histogram(nd_templates, nd_queries)
     return nd_templates, nd_queries
 
@@ -129,8 +139,16 @@ def build_synthetic_dataset(l, n, t, show_hist= False):
             break
 
     if show_hist == 1:
+        for j in range(0, len(dataset)):
+            queries[j] = []
+            for i in range(0, 100):
+                nb_errors, fraction = sample_errors(n)
+                temp_query = dataset[j].copy()
+                error_bits = random.sample(range(n), nb_errors)
+                for b in error_bits:
+                    temp_query[b] = (temp_query[b] + 1) % 2
+                queries[j].append(temp_query)
         build_show_histogram(dataset, queries)
-    print(str(errors_table))
     return dataset, queries
 
 
@@ -255,33 +273,36 @@ def hamming_dist(sample1, sample2):
     return dist
 
 def build_show_histogram(data, queries):
-    blueDistances=[]
-    redDistances=[]
+    redDist=[]
+    blueDist=[]
     for i in range(0, len(data)):
         for j in range(0, len(data)):
             if i != j:
-                blueDistances.append(hamming_dist(data[i], data[j]))
-
+                redDist.append(hamming_dist(data[i], data[j]))
         if len(queries) > i and len(queries[i]) > 0:
             if type(queries[i][0]) is int:
                 diff_query = queries[i]
-                redDistances.append(hamming_dist(data[i], diff_query))
+                blueDist.append(hamming_dist(data[i], diff_query))
             else:
                 for diff_query in queries[i]:
-                    redDistances.append(hamming_dist(data[i], diff_query))
+                    blueDist.append(hamming_dist(data[i], diff_query))
         #     print(type(diff_queries))
 
-    redWeights = [1/len(redDistances) for i in range(0, len(redDistances))]
-    blueWeights = [1/len(blueDistances) for i in range(0, len(blueDistances))]
-    if len(blueDistances) > 0:
-        plt.hist(blueDistances, density=True, bins=41, histtype='stepfilled', weights= blueWeights,
-                 color='b', alpha=0.7, label='Same')
+    blueW = [1/len(blueDist) for i in range(0, len(blueDist))]
+    redW = [1/len(redDist) for i in range(0, len(redDist))]
+    if len(blueDist) > 0:
+        plt.hist(blueDist, density=True, bins=41, histtype='stepfilled', weights= blueW,
+                 color='b', alpha=0.7, label='Comparisons readings same iris')
 
-    if len(redDistances) > 0:
-        plt.hist(redDistances, density=True, bins=41, histtype='stepfilled', weights = redWeights,
-                 color='r', label='Different')
+    if len(redDist) > 0:
+        plt.hist(redDist, density=True, bins=41, histtype='stepfilled', weights = redW,
+                 color='r', label='Comparisons different irises')
 
-    if len(blueDistances) >0 or len(redDistances) > 0:
+    if len(redDist) >0 or len(blueDist) > 0:
+        plt.legend()
+        plt.xlabel("Hamming Distance")
+        plt.ylabel("Frequency")
+        plt.title("Random Data")
         plt.show()
 
 #    plt.hist(redComparisons, normed=True, bins=120, histtype='stepfilled', color='r', label='Different')
