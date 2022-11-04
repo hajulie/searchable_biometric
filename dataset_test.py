@@ -69,7 +69,7 @@ def build_rand_dataset(l, n, t):
 
         queries.append(query)
 
-    print(errors_table)
+    # print(errors_table)
     # plt.plot(errors_table)
 
     return dataset, queries
@@ -90,7 +90,7 @@ def build_ND_dataset():
     nd_templates = [nd_dataset[x][0] for x in nd_dataset]
     nd_queries = [nd_dataset[x][1] for x in nd_dataset]
 
-    return nd_templates, nd_queries[:100]
+    return nd_templates, nd_queries
 
 
 def build_synthetic_dataset(l, n, t):
@@ -124,7 +124,7 @@ def build_synthetic_dataset(l, n, t):
         if ctr == l:
             break
 
-    print(str(errors_table))
+    # print(str(errors_table))
     return dataset, queries
 
 # only works if tree leaves order are not randomized !!!!
@@ -175,22 +175,22 @@ def compute_sys_rates(tree, queries, parallel, oram):
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
 
-        if 0 == i % 10 and i > 0:
-            print("Query number "+str(i+1)+" of "+str(len(queries)))
-            print("True Positive Rate = "+str(true_pos/(i+1)))
-            print("Avg false positives per query = " + str(sum(false_pos) / (i+1)))
-            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i+1)))
-            print("Max root matches in a query = " + str(max(nb_matching_roots)))
-            print("Avg root matches in a query = " + str(sum(nb_matching_roots)/(i+1)))
-            print("Good traversals = " + str(sum(good_traversals)/(i+1)))
-            print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
+        # if 0 == i % 10 and i > 0:
+        #     print("Query number "+str(i+1)+" of "+str(len(queries)))
+        #     print("True Positive Rate = "+str(true_pos/(i+1)))
+        #     print("Avg false positives per query = " + str(sum(false_pos) / (i+1)))
+        #     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i+1)))
+        #     print("Max root matches in a query = " + str(max(nb_matching_roots)))
+        #     print("Avg root matches in a query = " + str(sum(nb_matching_roots)/(i+1)))
+        #     print("Good traversals = " + str(sum(good_traversals)/(i+1)))
+        #     print("Bad traversals = " + str(sum(bad_traversals)/(i+1)))
+        #
+        #     if oram:
+        #         print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
+        #         print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
+        #         print("Avg time root search = " + str(tree.time_root_search / (i+1)))
 
-            if oram:
-                print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i+1)))
-                print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access) ))
-                print("Avg time root search = " + str(tree.time_root_search / (i+1)))
-
-    print("True Positive Rate = " + str(true_pos / len(queries)))
+    # print("True Positive Rate = " + str(true_pos / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / len(queries)))
     print("Max root matches in a query = " + str(max(nb_matching_roots)))
@@ -234,12 +234,12 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--parallel', help="Use parallelization.", type=int, default=1)
-    parser.add_argument('--oram', help="Use ORAM.", type=int, default=1)
+    parser.add_argument('--oram', help="Use ORAM.", type=int, default=0)
     parser.add_argument('--oram_dir', help="Directory fo ORAM files storage.", type=str, default="")
     parser.add_argument('--dataset', help="Dataset to test.", type=str, default='rand')
-    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=356)
-    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=630)
-    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=15)
+    parser.add_argument('--dataset_size', help="Size of dataset to test.", type=int, default=2500)
+    parser.add_argument('--nb_trees', help="Number of trees to build.", type=int, default=1000)
+    parser.add_argument('--lsh_size', help="LSH output size.", type=int, default=19)
     parser.add_argument('--root_bf_fp', help="LSH output size.", type=float, default=.0001)
     parser.add_argument('--internal_bf_fp', help="LSH output size.", type=float, default=.1)
     parser.add_argument('--oram_constant_accesses', help="Constant Number of Accesses for ORAM traversal.", type=int, default=100)
@@ -251,6 +251,7 @@ if __name__ == '__main__':
     oram = bool(args.oram)
 
     l = args.dataset_size  # dataset size
+    q_size = l
     k = args.nb_trees  # number of trees to build
     n = 1024  # vector size
     t = args.same_t
@@ -267,6 +268,7 @@ if __name__ == '__main__':
 
     # build & search using random dataset
     if args.dataset == "rand" or args.dataset == "all":
+        q_size = 350
 
         t_start = time.time()
         random_data, random_queries = build_rand_dataset(l, n, t)
@@ -292,12 +294,12 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries, parallel, oram)
+        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries[:q_size], parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
         print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(
-            len(random_queries)))
+            len(random_queries[:q_size])))
         print("Random dataset/queries : TPR = " + str(rand_tpr))
         print("Random dataset/queries : FPR = " + str(rand_fpr))
         print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
@@ -353,6 +355,7 @@ if __name__ == '__main__':
 
     # build & search using synthetic dataset
     if args.dataset == "synth" or args.dataset == "all":
+        q_size = 350
 
         t_start = time.time()
         synthetic_data, synthetic_queries = build_synthetic_dataset(l, n, t)
@@ -374,12 +377,12 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (mixed_tpr, mixed_fpr, root_matches) = compute_sys_rates(synth_tree, synthetic_queries, parallel, oram)
+        (mixed_tpr, mixed_fpr, root_matches) = compute_sys_rates(synth_tree, synthetic_queries[:q_size], parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
         print("Synthetic dataset/queries : Size dataset = " + str(len(synthetic_data)) + " - size queries = " + str(
-            len(synthetic_queries)))
+            len(synthetic_queries[:q_size])))
         print("Synthetic dataset/queries : TPR = " + str(mixed_tpr))
         print("Synthetic dataset/queries : FPR = " + str(mixed_fpr))
         print("Synthetic dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
