@@ -46,8 +46,10 @@ class subtree(object):
 
     # calculate the number of max elements based on the size of the given list
     def calculate_max_elem(self, num_elements):
+        print("num_elements = " + str(num_elements))
         # leaf nodes are hash output
         self.max_elem = 2 ** (math.ceil(math.log2(num_elements)))
+        print("self.max_elem = " + str(self.max_elem))
 
     # calculate depth of the tree
     def calculate_depth(self):
