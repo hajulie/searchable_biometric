@@ -1,7 +1,6 @@
 import sys
 
 import scipy
-
 from b4_main_tree import main_tree
 from b4_main_tree import build_db
 from b4_oram import oblivious_ram
@@ -200,20 +199,20 @@ def compute_sys_rates(tree, queries, parallel, oram):
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
 
-        if 0 == i % 10 and i > 0:
-            print("Query number " + str(i + 1) + " of " + str(len(queries)))
-            print("True Positive Rate = " + str(true_pos / (i + 1)))
-            print("Avg false positives per query = " + str(sum(false_pos) / (i + 1)))
-            print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i + 1)))
-            print("Max root matches in a query = " + str(max(nb_matching_roots)))
-            print("Avg root matches in a query = " + str(sum(nb_matching_roots) / (i + 1)))
-            print("Good traversals = " + str(sum(good_traversals) / (i + 1)))
-            print("Bad traversals = " + str(sum(bad_traversals) / (i + 1)))
-
-            if oram:
-                print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i + 1)))
-                print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access)))
-                print("Avg time root search = " + str(tree.time_root_search / (i + 1)))
+        # if 0 == i % 10 and i > 0:
+        #     print("Query number " + str(i + 1) + " of " + str(len(queries)))
+        #     print("True Positive Rate = " + str(true_pos / (i + 1)))
+        #     print("Avg false positives per query = " + str(sum(false_pos) / (i + 1)))
+        #     print("Avg visited nodes per query  = " + str(sum(visited_nodes) / (i + 1)))
+        #     print("Max root matches in a query = " + str(max(nb_matching_roots)))
+        #     print("Avg root matches in a query = " + str(sum(nb_matching_roots) / (i + 1)))
+        #     print("Good traversals = " + str(sum(good_traversals) / (i + 1)))
+        #     print("Bad traversals = " + str(sum(bad_traversals) / (i + 1)))
+        #
+        #     if oram:
+        #         print("#ORAM accesses per query = " + str(tree.nb_oram_access / (i + 1)))
+        #         print("Avg time ORAM node lookup = " + str((tree.time_oram_access / tree.nb_oram_access)))
+        #         print("Avg time root search = " + str(tree.time_root_search / (i + 1)))
 
     print("True Positive Rate = " + str(true_pos / len(queries)))
     print("Avg false positives per query = " + str(sum(false_pos) / len(queries)))
@@ -221,7 +220,8 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Max root matches in a query = " + str(max(nb_matching_roots)))
     print("Avg root matches in a query = " + str(sum(nb_matching_roots) / len(queries)))
     # print("Good traversals = " + str(good_traversals))
-    # print("Bad traversals = " + str(bad_traversals))
+    print("Bad traversals = " + str(numpy.sort(bad_traversals)))
+    print("Bad traversals number such that 95% are below = " + str(numpy.percentile(bad_traversals, 95)))
     print("Avg good traversals = " + str(sum(good_traversals) / len(queries)))
     print("Max good traversals = " + str(max(good_traversals)))
     print("Avg bad traversals = " + str(sum(bad_traversals) / len(queries)))
@@ -230,11 +230,13 @@ def compute_sys_rates(tree, queries, parallel, oram):
 
     show_match_histogram = 0
     if show_match_histogram == 1:
-        plt.hist(good_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
-                 color='b', alpha=0.7, label='Good Matches')
+        # plt.hist(good_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
+        #          color='b', alpha=0.7, label='Good Matches')
 
-        plt.hist(bad_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
-                     color='r', label='Bad Matches')
+        # plt.hist(bad_traversals, density=True, bins=max(good_traversals+bad_traversals)+1, histtype='stepfilled',
+        #              color='r', label='Bad Matches')
+        plt.hist(bad_traversals, density=True, bins=max(bad_traversals) + 1, histtype='stepfilled',
+                 color='r', label='Bad Matches')
         plt.legend()
         plt.xlabel("Number of root matches")
         plt.ylabel("Frequency")
@@ -333,6 +335,7 @@ if __name__ == '__main__':
                         default=100)
     parser.add_argument('--same_t', help="Avg distance between vectors from same class.", type=float, default=0.3)
     parser.add_argument('--diff_t', help="Avg distance between vectors from different class.", type=float, default=0.4)
+    parser.add_argument('--nb_queries', help="Number of queries.", type=int, default=356)
     args = parser.parse_args()
 
     parallel = bool(args.parallel)
@@ -343,6 +346,7 @@ if __name__ == '__main__':
     k = args.nb_trees  # number of trees to build
     n = 1024  # vector size
     t = args.same_t
+    q = args.nb_queries
     accesses = args.oram_constant_accesses
 
     branching_factor = 2
@@ -382,7 +386,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries, parallel, oram)
+        (rand_tpr, rand_fpr, root_matches) = compute_sys_rates(random_tree, random_queries[:q], parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
@@ -465,7 +469,7 @@ if __name__ == '__main__':
         t_oram = t_end - t_start
 
         t_start = time.time()
-        (mixed_tpr, mixed_fpr, root_matches) = compute_sys_rates(synth_tree, synthetic_queries, parallel, oram)
+        (mixed_tpr, mixed_fpr, root_matches) = compute_sys_rates(synth_tree, synthetic_queries[:q], parallel, oram)
         t_end = time.time()
         t_search = t_end - t_start
 
