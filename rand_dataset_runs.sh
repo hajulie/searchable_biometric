@@ -1,5 +1,5 @@
 # ND dataset
-python3 dataset_test.py --dataset=nd --oram_constant_accesses=37 --nb_trees=850 --lsh_size=18 --same_t=.3 --oram=1 > nd356.txt
+#python3 dataset_test.py --dataset=nd --oram_constant_accesses=37 --nb_trees=850 --lsh_size=18 --same_t=.3 --oram=1 > nd356.txt
 
 ## random dataset
 #python3 dataset_test.py --oram_constant_accesses=13 --nb_trees=630 --lsh_size=15 --dataset_size=356 --same_t=.3 --oram=1 > rand356.txt
