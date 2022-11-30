@@ -391,7 +391,7 @@ if __name__ == '__main__':
         t_search = t_end - t_start
 
         print("Random dataset/queries : Size dataset = " + str(len(random_data)) + " - size queries = " + str(
-            len(random_queries)))
+            len(random_queries[:q])))
         print("Random dataset/queries : TPR = " + str(rand_tpr))
         print("Random dataset/queries : FPR = " + str(rand_fpr))
         print("Random dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
@@ -428,6 +428,7 @@ if __name__ == '__main__':
             storage_t = oblivious_ram(files_dir=args.oram_dir, total_accesses=accesses)
             storage_t.apply(ND_tree)
             ND_tree = storage_t
+            print("Size of files " + str(size_oram_files()))
         t_end = time.time()
         t_oram = t_end - t_start
 
@@ -465,6 +466,7 @@ if __name__ == '__main__':
             storage_t = oblivious_ram(files_dir=args.oram_dir, total_accesses=accesses)
             storage_t.apply(synth_tree)
             synth_tree = storage_t
+            print("Size of files " + str(size_oram_files()))
         t_end = time.time()
         t_oram = t_end - t_start
 
@@ -474,7 +476,7 @@ if __name__ == '__main__':
         t_search = t_end - t_start
 
         print("Synthetic dataset/queries : Size dataset = " + str(len(synthetic_data)) + " - size queries = " + str(
-            len(synthetic_queries)))
+            len(synthetic_queries[:q])))
         print("Synthetic dataset/queries : TPR = " + str(mixed_tpr))
         print("Synthetic dataset/queries : FPR = " + str(mixed_fpr))
         print("Synthetic dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
