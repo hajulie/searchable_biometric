@@ -87,9 +87,9 @@ class oblivious_ram(object):
             self.nb_oram_access += 1
 
             t_end = time.time()
-            if (t_end-t_start) < .060:
-                time.sleep(.060 - (t_end-t_start))
-                t_end = time.time()
+            # if (t_end-t_start) < .060:
+            #     time.sleep(.060 - (t_end-t_start))
+            #     t_end = time.time()
             self.time_oram_access += t_end - t_start
 
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
