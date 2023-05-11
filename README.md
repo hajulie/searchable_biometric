@@ -1,4 +1,4 @@
-# uconn_reu
+# Private Eyes
 
 Required packages:
  * [bloom-filter2](https://pypi.org/project/bloom-filter2/) 
