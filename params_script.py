@@ -91,7 +91,7 @@ def sys_params_to_csv(l, b,  n, db_size, lsh_tpr, lsh_fpr, bf_fpr, desired_tpr, 
             tp_matches = 0
             fp_matches = 0
 
-            for k in range(0, desired_max_k+10, 1):
+            for k in range(5, desired_max_k+10, 1):
                 # (lsh_tpr_s, lsh_fpr_s) = compute_lsh_rates(n, s, r, c)
                 (sys_tpr, sys_fpr) = compute_system_rates(k, lsh_tpr_s, lsh_fpr_s)
                 # if rates not good enough, discard
@@ -132,14 +132,14 @@ if __name__ == '__main__':
     # retrieve script arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--out_file', help="Output file name", type=str, default='params_script.csv')
-    parser.add_argument('--db_size', help="Number of records stored in the database", type=int, default=5000)
+    parser.add_argument('--db_size', help="Number of records stored in the database", type=int, default=1000000)
     parser.add_argument('--n', help="Feature vectors size in bits", type=int, default=1024)
     parser.add_argument('--sys_tpr', help="Desired system True Positive Rate (TPR)", type=float, default=0.95)
-    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.0001)
+    parser.add_argument('--sys_fpr', help="Desired system False Positive Rate (FPR)", type=float, default=0.01)
     parser.add_argument('--bf_fpr', help="Bloom Filter FPR", type=float, default=0.0001)
     # parser.add_argument('--lsh_r', help="LSH r param", type=float, default=0.3)
     # parser.add_argument('--lsh_c', help="LSH c param", type=float, default=1.7)
-    parser.add_argument('--lsh_tpr', help="LSH TPR", type=float, default=0.80)
+    parser.add_argument('--lsh_tpr', help="LSH TPR", type=float, default=0.70)
     parser.add_argument('--lsh_fpr', help="LSH FPR", type=float, default=0.5)
     parser.add_argument('--branch', help="Branching factor", type=int, default=2)
     args = parser.parse_args()
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     bf_fpr = args.bf_fpr  # bloom filter fpr, default = 10^-4
     lsh_tpr = args.lsh_tpr
     lsh_fpr = args.lsh_fpr
-    desired_max_k = 10000
+    desired_max_k = 1000000
 
     print("Estimated tree depth = " + str(compute_tree_depth(db_size, branch_factor)))
 

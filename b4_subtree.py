@@ -37,8 +37,8 @@ class subtree(object):
     @staticmethod
     def create_subtree(id, branching_factor, error_rate, lsh, elements, vector_length):
         st = subtree(id, branching_factor, error_rate, lsh, vector_length)
-        max_elements = st.build_tree(elements)
-        return (st, max_elements)
+        st.build_tree(elements)
+        return st
 
     # testing funcions
     def show_tree(self):
@@ -141,24 +141,11 @@ class subtree(object):
         self.calculate_max_elem(num_elements)  # max number of elements WITH calculation of eLSH outputs
         self.calculate_depth()
         elements = [self.calculate_LSH(i.vector) for i in og_elements]
-        #print("The number of distinct elements is: "+str(set(elements).size()))
 
         # initialize root node
         self.new_node("root", self.root, num_elements, elements=elements)
         #To enable comparison based sort in the ORAM implementation
         elements.sort(key=str)
-        max_unique = 1
-        current_unique = 1
-        for i in range(len(elements)-1):
-            if str(elements[i]) ==str(elements[i+1]):
-                current_unique = current_unique+1
-            else:
-                if current_unique > max_unique:
-                    max_unique = current_unique
-                current_unique = 1
-
-
-
         current_node = self.root
         parent_node = self.root - 1  # -1 is just for it to work overall
 
@@ -198,8 +185,6 @@ class subtree(object):
                 raise ValueError
             parent_node_data.add_children_lsh(self.get_node_data(child_1), self.get_node_data(child_2))
             parent_node -= 1
-
-        return max_unique
 
 
     def search(self, item):

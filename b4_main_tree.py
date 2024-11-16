@@ -80,7 +80,6 @@ class main_tree(object):
         # print("self.eyes", self.eyes)
         self.compute_eLSH(self.eyes)
 
-
         # print("Processes: " + str(mp.cpu_count()))
         if parallel:
             self.subtrees = Parallel(n_jobs=2 * mp.cpu_count())(
@@ -91,15 +90,12 @@ class main_tree(object):
             self.total_nodes = sum([st.num_nodes for st in self.subtrees])
 
         else:
-            global_max = 1
             for h in range(self.l):
-                (st, max_elements) = subtree.create_subtree(h, self.branching_factor, _false_pos_internal, self.lsh[h], self.eyes, self.n)
-                if max_elements> global_max:
-                    global_max = max_elements
+                st = subtree.create_subtree(h, self.branching_factor, _false_pos_internal, self.lsh[h], self.eyes, self.n)
                 # st.show_tree()
                 self.subtrees[h] = st
                 self.total_nodes += st.num_nodes
-            print("Global max is "+str(global_max))
+
         if self.subtrees:
             self.depth = self.subtrees[0].depth
 
