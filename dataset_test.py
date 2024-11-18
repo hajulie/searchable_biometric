@@ -203,7 +203,9 @@ def compute_sys_rates(tree, queries, parallel, oram):
         tmp_bad_traversals = num_root_matches - tmp_good_traversals
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
+        #print(time_max_depth)
         parallel_time.append(sum(time_max_depth))
+
 
         # if 0 == i % 10 and i > 0:
         #     print("Query number " + str(i + 1) + " of " + str(len(queries)))

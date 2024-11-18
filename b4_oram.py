@@ -24,6 +24,7 @@ class oblivious_ram(object):
         self.storage_name = storage_name
         self.oram_map = None
         self.oram = None
+        self.oram_handles = None
         self.root = []
         self.leaf_nodes = None
         self.tmp_map = []
@@ -76,8 +77,8 @@ class oblivious_ram(object):
             print(current_oram_map)
         else:
             t_start = time.time()
-            current_oram_file = PathORAM(self.files_dir + self.storage_name + str(depth - 1), current_oram.stash,
-                                         current_oram.position_map, key=current_oram.key, storage_type='file')
+            current_oram_file = self.oram_handles[depth-1]
+
             blocks_pos = current_oram_map[node]
 
 
@@ -94,9 +95,8 @@ class oblivious_ram(object):
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
             orig = pickle.loads(rebuilt_node)
 
-            current_oram_file.close()
+            #
         # print("original type:" , type(orig) == list)
-
         return orig
 
         # if things in tree are node_data not actual nodes
@@ -108,10 +108,18 @@ class oblivious_ram(object):
         accesses_made = 0
         nodes_visited = {x.identifier: [0] for x in self.maintree.subtrees}
         access_depth = {x.identifier: [0] for x in self.maintree.subtrees}
+
         for tree in access_depth:
             access_depth[tree] = {i: [] for i in range(self.maintree.depth + 1)}
             access_depth[tree][0] = [1]
         num_root_matches = 0
+        self.oram_handles = {}
+
+        for depth in range(self.maintree.depth ):
+            current_oram = self.oram[depth]
+            self.oram_handles[depth]= PathORAM(self.files_dir + self.storage_name + str(depth), current_oram.stash,
+                       current_oram.position_map, key=current_oram.key, storage_type='file')
+
 
         leaf_nodes = []
         hashes = []
@@ -134,7 +142,7 @@ class oblivious_ram(object):
             queue.append((st , 1))
 
         rest = self.total_accesses - len(queue)
-        if (rest < 0):
+        if rest < 0:
             queue = queue[:self.total_accesses]
         else:
             queue += [(0, 2 ** current_level)] * rest
@@ -198,6 +206,9 @@ class oblivious_ram(object):
             if len(time_per_level[depth]) != 0:
                 time_max.append(max(time_per_level[depth]))
 
+        for depth in range(self.maintree.depth ):
+            self.oram_handles[depth].close()
+
         return irises, leaf_nodes, nodes_visited, access_depth, num_root_matches, time_max
 
     def init_maps(self):
@@ -232,6 +243,7 @@ class oblivious_ram(object):
     def build_oram(self, nodes_map):
         self.oram = [None for i in range(self.maintree.subtrees[0].get_depth()+1)]
         self.oram_map = [{} for i in range(len(self.subtrees))]
+        self.oram_handles = {}
 
         for (depth, serialized_nodes) in enumerate(nodes_map):
             block_count = len(serialized_nodes)
@@ -253,6 +265,9 @@ class oblivious_ram(object):
                         # add node to block mapping for client
                         self.oram_map[st_id][node_id].append(block_id)
                         block_id = block_id + 1
+
+            # self.oram_handles[depth] = PathORAM(self.files_dir + self.storage_name + str(depth ), self.oram[depth].stash,
+            #                                    self.oram[depth].position_map, key=self.oram[depth].key, storage_type='file')
 
     def apply(self, main_tree, block_size=256):
         self.maintree = main_tree
