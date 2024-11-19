@@ -87,7 +87,7 @@ def build_rand_dataset(l, n, t, show_hist = False):
 
 def build_ND_dataset(show_hist = False):
     cwd = os.getcwd()
-    dir_list = glob.glob(cwd + "//datasets//1024_folders//*")
+    dir_list = glob.glob(cwd + "//datasets//nd_dataset//*")
     nd_dataset = {}
     class_labels = {}
     i = 0
@@ -203,10 +203,8 @@ def compute_sys_rates(tree, queries, parallel, oram):
         tmp_bad_traversals = num_root_matches - tmp_good_traversals
         good_traversals.append(tmp_good_traversals)
         bad_traversals.append(tmp_bad_traversals)
-        #print(time_max_depth)
+
         parallel_time.append(sum(time_max_depth))
-
-
         # if 0 == i % 10 and i > 0:
         #     print("Query number " + str(i + 1) + " of " + str(len(queries)))
         #     print("True Positive Rate = " + str(true_pos / (i + 1)))
@@ -234,7 +232,7 @@ def compute_sys_rates(tree, queries, parallel, oram):
     print("Max good traversals = " + str(max(good_traversals)))
     print("Avg bad traversals = " + str(sum(bad_traversals) / len(queries)))
     print("Max bad traversals = " + str(max(bad_traversals)))
-    print("Average parallel time "+str(sum(parallel_time) / len(queries)))
+    print("Parallel time "+str(sum(parallel_time)))
 
 
     show_match_histogram = 0
@@ -410,7 +408,7 @@ if __name__ == '__main__':
         print("Random dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         if oram:
             print("Random dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        print("Random dataset/queries : search takes " + str(t_search/q) + " seconds.")
+        print("Random dataset/queries : search takes " + str(t_search) + " seconds.")
         print("Random dataset/queries : avg number of root matches " + str(sum(root_matches) / len(root_matches)))
 
         # plot number of matching root nodes + binomial fit
@@ -456,7 +454,7 @@ if __name__ == '__main__':
         print("ND 0405 dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("ND 0405 dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("ND 0405 dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        print("ND 0405 dataset/queries : search takes " + str(t_search/len(ND_queries)) + " seconds.")
+        print("ND 0405 dataset/queries : search takes " + str(t_search) + " seconds.")
 
     # build & search using synthetic dataset
     if args.dataset == "synth" or args.dataset == "all":
@@ -494,4 +492,4 @@ if __name__ == '__main__':
         print("Synthetic dataset/queries : build_dataset takes " + str(t_dataset) + " seconds.")
         print("Synthetic dataset/queries : build_index takes " + str(t_tree) + " seconds.")
         print("Synthetic dataset/queries : ORAM setup takes " + str(t_oram) + " seconds.")
-        print("Synthetic dataset/queries : search takes " + str(t_search/q) + " seconds.")
+        print("Synthetic dataset/queries : search takes " + str(t_search) + " seconds.")

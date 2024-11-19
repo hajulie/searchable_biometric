@@ -80,16 +80,11 @@ class oblivious_ram(object):
             current_oram_file = self.oram_handles[depth-1]
 
             blocks_pos = current_oram_map[node]
-
-
             for pos in blocks_pos:
                 raw_data.append(current_oram_file.read_block(pos))
             self.nb_oram_access += 1
 
             t_end = time.time()
-            # if (t_end-t_start) < .060:
-            #     time.sleep(.060 - (t_end-t_start))
-            #     t_end = time.time()
             self.time_oram_access += t_end - t_start
 
             rebuilt_node = unpad(b''.join(raw_data), self.block_size)
@@ -115,7 +110,7 @@ class oblivious_ram(object):
         num_root_matches = 0
         self.oram_handles = {}
 
-        for depth in range(self.maintree.depth ):
+        for depth in range(self.maintree.depth):
             current_oram = self.oram[depth]
             self.oram_handles[depth]= PathORAM(self.files_dir + self.storage_name + str(depth), current_oram.stash,
                        current_oram.position_map, key=current_oram.key, storage_type='file')
@@ -135,6 +130,7 @@ class oblivious_ram(object):
         t_end = time.time()
         time_per_level = {i: [] for i in range(self.maintree.depth + 1)}
         self.time_root_search += t_end - t_start
+        time_per_level[0].append( t_end - t_start)
         num_root_matches = len(matching_subtrees)
 
         # create list of children nodes to visit
@@ -162,7 +158,7 @@ class oblivious_ram(object):
             access_depth[current_node[0]][current_level].append(current_node)
             t_start = time.time()
             original_node_data = self.retrieve_data(tree, current_level, node)
-            time_per_level[current_level - 1].append(time.time() - t_start)
+            time_per_level[current_level].append(time.time() - t_start)
             if original_node_data is None:
                 print("Was unable to look up data " + str(tree) + ", " + str(current_level) + ", " + str(node))
                 exit(1)
